@@ -1,0 +1,5 @@
+boto3==1.28.62
+llama-index==0.9.7
+langchain==0.0.340
+sqlalchemy==2.0.23
+PyAthena[SQLAlchemy]
