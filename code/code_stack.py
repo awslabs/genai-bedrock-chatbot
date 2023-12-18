@@ -381,6 +381,7 @@ class CodeStack(Stack):
             environment={
                 "KENDRA_INDEX_ID": kendra_index.ref,
                 "DATA_SOURCE_BUCKET_NAME": kendra_bucket.bucket_name,
+                "PRICING_DATA_SOURCE_BUCKET_NAME": sagemaker_bucket.bucket_name,
                 "SAGEMAKER_PRICING_DATABASE": glue_database.ref,
                 "LOG_LEVEL": logging_context["lambda_log_level"],
             },

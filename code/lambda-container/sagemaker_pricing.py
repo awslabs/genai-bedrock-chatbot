@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from llama_index.objects import ObjectIndex, SQLTableNodeMapping, SQLTableSchema
+from llama_index.objects import ObjectIndex, SQLTableNodeMapping
 from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
 from llama_index import VectorStoreIndex
 from llama_index import SQLDatabase
@@ -13,10 +13,10 @@ from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
 
 
 table_details = {
-    "real_time_inference_price_underscore": "real time inference instance price data, includes instance name, price, memory.Use this as default table if non specified",
-    "training_price_underscore": "training instance price data, includes instance name, price, memory.",
-    "asynchronous_inference_price_underscore": "asynchronous inference instance price data, includes instance name, price, memory",
-    "inference_accelerator_price_underscore": "inference accelarator instance price data, includes instance name, price, memory",
+    "real_time_inference_price": "real time inference instance price data, includes instance name, price, memory.Use this as default table if non specified",
+    "training_price": "training instance price data, includes instance name, price, memory.",
+    "asynchronous_inference_price": "asynchronous inference instance price data, includes instance name, price, memory",
+    "inference_accelerator_price": "inference accelarator instance price data, includes instance name, price, memory",
 }
 
 
@@ -28,11 +28,11 @@ def create_sql_engine():
     """
     Connect to Amazon Athena
     """
-    s3_staging_dir = "s3://sagemaker-pricing-data-452020511345"
+    s3_staging_dir = Connections.s3_pricing_bucket_name
     region = Connections.region_name
     database = Connections.sagemaker_pricing_database
     # Construct the connection string
-    conn_url = f"awsathena+rest://athena.{region}.amazonaws.com/{database}?s3_staging_dir={s3_staging_dir}"
+    conn_url = f"awsathena+rest://athena.{region}.amazonaws.com/{database}?s3_staging_dir=s3://{s3_staging_dir}"
     # Create an SQLAlchemy engine
     engine = create_engine(conn_url)
 
@@ -62,16 +62,9 @@ def create_query_engine(
     service_context = ServiceContext.from_defaults(
         llm=llm, embed_model=embeddings)
 
-    tables = list(sql_database._all_tables)
+    # tables = list(sql_database._all_tables)
     table_node_mapping = SQLTableNodeMapping(sql_database)
     table_schema_objs = []
-
-    for table in tables:
-        if "underscore" in table:
-            table_schema_objs.append(
-                (SQLTableSchema(table_name=table,
-                 context_str=table_details[table]))
-            )
 
     obj_index = ObjectIndex.from_objects(
         table_schema_objs,

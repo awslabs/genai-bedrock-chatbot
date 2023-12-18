@@ -44,13 +44,13 @@ SQL_TEMPLATE_STR = """Given an input question, first create a syntactically corr
     You must convert any mentioned instance names to the format ml.INSTANCE_FAMILY.INSTANCE_SIZE. A few examples:
 
     Query: "how much is p3.8xlarge per hour for training?"
-    Response: "SELECT instance_type, price_per_hour \nFROM training_price_underscore\nWHERE instance_type = 'ml.p3.8xlarge'\nORDER BY price_per_hour DESC"
+    Response: "SELECT instance_type, price_per_hour \nFROM training_price\nWHERE instance_type = 'ml.p3.8xlarge'\nORDER BY price_per_hour DESC"
 
     Query: "how much does p32xlarge, p3 8xlarge and p3.16xlarge cost per hour?"
-    Response: "SELECT instance_type, price_per_hour \nFROM training_price_underscore\nWHERE instance_type IN ('ml.p3.2xlarge', 'ml.p3.8xlarge', 'ml.p3.16xlarge')\nORDER BY price_per_hour;"
+    Response: "SELECT instance_type, price_per_hour \nFROM training_price\nWHERE instance_type IN ('ml.p3.2xlarge', 'ml.p3.8xlarge', 'ml.p3.16xlarge')\nORDER BY price_per_hour;"
 
     Query: "Compare the price per hour of c5.4xlarge and trn1n.32xlarge for inference."
-    Response: "SELECT instance_type, price_per_hour \nFROM inference_price_underscore\nWHERE instance_type IN ('ml.c5.4xlarge', 'ml.trn1n.32xlarge')\nORDER BY price_per_hour ASC;"
+    Response: "SELECT instance_type, price_per_hour \nFROM inference_price\nWHERE instance_type IN ('ml.c5.4xlarge', 'ml.trn1n.32xlarge')\nORDER BY price_per_hour ASC;"
 
     Question: {query_str}\nSQLQuery: """
 
@@ -62,6 +62,7 @@ RESPONSE_TEMPLATE_STR = """If the <SQL Response> below contains data, then given
 
     Do not make any mention of queries or databases in your response, instead you can say 'according to the latest information' .\n\n
     Please make sure to mention any additional details from the context supporting your response.
+    If the final answer contains <dollar_sign>$</dollar_sign>, ADD '\' ahead of each <dollar_sign>$</dollar_sign>.
 
     Response: """
 
@@ -80,9 +81,9 @@ AGENT_TEMPLATE_WITH_HISTORY = """
         you should always think about what to do
     Action:
         the action to take, should be one of [{tool_names}].
-        If use the Retrieval Augmented Generation on Amazon Kendra tool, pass the source file to the final answer.
+        If use the sagemaker developer guide tool, pass the source file to the final answer.
         If it asks about pricing data such as the instance price, compute optimized, memory, accelerated computing, storage, instance features, instance performance etc.,
-        please use the pricing data retrievalt tool.
+        please use the sagemaker pricing data retrieval tool.
     Action Input:
         the input to the action
     Observation:
@@ -92,29 +93,32 @@ AGENT_TEMPLATE_WITH_HISTORY = """
         I now know the final answer
     Final Answer:
         The final answer should include the information from all the observations. The answer should be comprehensvie and concise.
-        Please include the source file from rag tool.
+        Please include the source file from sagemaker developer guide tool.
 
     Here is one example:
 
-        Question: which ec2 instance should I use to train a genAI model and what are the importance information about the perferred instance?
+        Question: which ec2 instance should I use to train a GenAI model and what are the importance information about the perferred instance?
         Thought: you should always think about what to do
-            Action: Retrieval Augmented Generation on Amazon Kendra
-            Action Input: "which instance can facilitate deep learning training and is optmized for large-scale genAI applications"
+            Action: sagemaker developer guide tool
+            Action Input: "which instance can facilitate deep learning training and is optmized for large-scale GenAI applications"
             Observation: Trn1n and Inf2
 
-            Action: pricing data retrieval
+            Action: sagemaker pricing data retrieval
             Action Input: "what are the relevant information about the perferred instance?"
             Observation: Please review the details of the most suitable EC2 instance from the pricing table.
 
         Thought: I now know the final answer
-        Final Answer: Answer the question with the findings from the "Retrieval Augmented Generation on Amazon Kendra" tool and the most relavant information from the "pricing data retrieval" tool.
+        Final Answer: Answer the question with the findings from the "sagemaker developer guide tool" tool and the most relavant information from the "sagemaker pricing data retrieval" tool.
 
     Begin! Remember to answer as an expert in AWS SageMaker service and pricing when giving your final answer.
     You should always use EC2 instnaces with GPUs to train deep learning models.
+
     Do not make up any answer!
-    Please format the final text answer in the Markdown style.
-    Please include the source file from the rag tool in the final answer.
+
+    Please format the final text answer in the Markdown style, ADD '\' ahead of each $.
+    Please include the source file from the sagemaker developer guide tool in the final answer.
     The final answer format should be in JSON format with the keys as "text" and "source".
+    If the final answer comes only from the "sagemaker pricing data retrieval" tool, set "source" as "[Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)"
 
     Previous conversation history:
     {history}

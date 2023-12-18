@@ -60,8 +60,8 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
     unique_sources = list(OrderedDict.fromkeys(source_list))
     # put the sources information into a string
     refs_str = ""
-    for x in list(unique_sources):
-        refs_str += "[" + str(x[0]) + "](%s)" % (x[1]) + "\n"
+    for i, x in enumerate(list(unique_sources)):
+        refs_str += f"{i + 1}. " + "[" + str(x[0]) + "](%s)" % (x[1]) + "\n\n"
 
     # put the retrieved information and previous questions and answers in memory
     for i, doc in enumerate(docs):

@@ -104,12 +104,12 @@ def agent_call(llm, query):
         output (dict): answer to the input question.
     """
     rag_tool = Tool(
-        name="Retrieval Augmented Generation on Amazon Kendra",
+        name="sagemaker developer guide",
         func=doc_tool,
         description="Useful for when you need to query the Amazon Kendra index for more information on SageMaker documentation. Input should be a question formated as a string.",
     )
     data_tool = Tool(
-        name="pricing data retrieval",
+        name="sagemaker pricing data retrieval",
         func=pricing_tool,
         description="Useful for when you need to have access to pricing table data. Input should be a question.",
     )

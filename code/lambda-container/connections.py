@@ -6,12 +6,13 @@ from langchain.llms import Bedrock
 class Connections:
     region_name = os.environ['AWS_REGION']
     s3_rawdata_bucket_name = os.environ['DATA_SOURCE_BUCKET_NAME']
+    s3_pricing_bucket_name = os.environ['PRICING_DATA_SOURCE_BUCKET_NAME']
     kendra_rawdata_index_id = os.environ['KENDRA_INDEX_ID']
     sagemaker_pricing_database = os.environ['SAGEMAKER_PRICING_DATABASE']
     log_level = os.environ['LOG_LEVEL']
 
     kendra_client = boto3.client("kendra", region_name=region_name)
-    s3_resource = boto3.resource("s3")
+    s3_resource = boto3.resource("s3", region_name=region_name)
     bedrock_client = boto3.client("bedrock-runtime", region_name=region_name)
 
     @staticmethod

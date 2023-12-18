@@ -5,12 +5,9 @@ from datetime import datetime
 import logging
 import json
 import streamlit as st
-from streamlit_chat import message
-from utils import (
-    clear_input,
-    show_empty_container,
-    show_footer
-)
+
+# from streamlit_chat import message
+from utils import clear_input, show_empty_container, show_footer
 from connections import Connections
 
 logger = logging.getLogger(__name__)
@@ -98,26 +95,29 @@ def show_message():
             print(f"Output: {output}")
             result = output["answer"]
             st.write("-------")
-            source_title = "**Source**:" + \
-                output["source"] + "\n" + "**Answer**:\n"
+            source = output["source"]
+            if source.startswith("SELECT"):
+                source = f"_{source}_"
+            # else:
+            #     source = source.replace('\n', '\n\n')
+            source_title = "\n\n **Source**:" + "\n\n" + source
+            answer = "**Answer**: \n\n" + result
             st.session_state.questions.append(user_input)
-            st.session_state.answers.append(source_title + result)
+            st.session_state.answers.append(answer + source_title)
 
     if st.session_state["answers"]:
         for i in range(len(st.session_state["answers"]) - 1, -1, -1):
-            message(
-                st.session_state["questions"][i],
-                is_user=True,
-                key=str(i) + "_user",
-                logo="https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Felix",
-                allow_html=True,
-            )
-            message(
-                st.session_state["answers"][i],
-                key=str(i),
-                logo="https://api.dicebear.com/6.x/icons/svg?seed=Chloe&backgroundColor=000000&radius=0",
-                allow_html=True,
-            )
+            with st.chat_message(
+                name="human",
+                avatar="https://api.dicebear.com/7.x/notionists-neutral/svg?seed=Felix",
+            ):
+                st.markdown(st.session_state["questions"][i])
+
+            with st.chat_message(
+                name="ai",
+                avatar="https://static.us-east-1.prod.workshops.aws/public/b47fa3b3-57fd-4ef6-8a3c-b5b24d8db469/static/SageMaker_logo.png",
+            ):
+                st.markdown(st.session_state["answers"][i])
 
 
 def main():
