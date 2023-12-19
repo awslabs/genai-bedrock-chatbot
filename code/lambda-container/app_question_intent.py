@@ -10,7 +10,7 @@ from langchain import FewShotPromptTemplate
 def get_question_intent_general(llm, query):
     """
     This function is to classify the query intent with a few shot prompts.
-    Two categories: "Use Case 1", "Use Case 2", "Use Case 3 and "Use Case 3m" are the choices.
+    Three categories: "Use Case 1", "Use Case 2", "Use Case 3  are the choices.
 
     Input:
         llm: LLM object
