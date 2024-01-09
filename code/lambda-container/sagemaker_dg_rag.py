@@ -14,7 +14,7 @@ def source_link(input_source):
     """
     Retrieve source url of relevant documents
     """
-    string = input_source.partition("s3.us-east-1.amazonaws.com/")[2]
+    string = input_source.partition(f"s3.{Connections.region_name}.amazonaws.com/")[2]
     bucket = string.partition("/")[0]
     obj = string.partition("/")[2]
     file = s3_resource.Object(bucket, obj)
