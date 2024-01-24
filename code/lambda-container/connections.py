@@ -1,6 +1,6 @@
 import os
 import boto3
-from langchain.llms import Bedrock
+from langchain_community.llms import Bedrock
 
 
 class Connections:

@@ -3,8 +3,8 @@ This script is to leverage few shots prompting to understand user's question int
 """
 
 import logging
-from langchain import PromptTemplate
-from langchain import FewShotPromptTemplate
+from langchain.prompts import PromptTemplate
+from langchain.prompts import FewShotPromptTemplate
 
 
 def get_question_intent_general(llm, query):

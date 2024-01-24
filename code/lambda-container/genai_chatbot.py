@@ -1,7 +1,9 @@
 import json
 import logging
 from index import get_response
+from connections import Connections
 
+logging.getLogger().setLevel(Connections.log_level)
 logging.getLogger("boto3").setLevel(logging.WARNING)
 logging.getLogger("botocore").setLevel(logging.WARNING)
 

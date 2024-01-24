@@ -11,7 +11,7 @@ from utils import clear_input, show_empty_container, show_footer
 from connections import Connections
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(Connections.log_level)
 
 lambda_client = Connections.lambda_client
 
@@ -20,7 +20,7 @@ def get_response(user_input, session_id):
     """
     Get response from genai Lambda
     """
-    print(f"session id: {session_id}")
+    logger.debug(f"session id: {session_id}")
     payload = {"body": json.dumps(
         {"query": user_input, "session_id": session_id})}
 
@@ -32,7 +32,7 @@ def get_response(user_input, session_id):
         Payload=json.dumps(payload),
     )
     response_output = json.loads(response["Payload"].read().decode("utf-8"))
-    print(f"response_output from genai lambda: {response_output}")
+    logger.debug(f"response_output from genai lambda: {response_output}")
 
     return response_output
 
@@ -92,7 +92,7 @@ def show_message():
             vertical_space = show_empty_container()
             vertical_space.empty()
             output = get_response(user_input, session_id)
-            print(f"Output: {output}")
+            logger.debug(f"Output: {output}")
             result = output["answer"]
             st.write("-------")
             source = output["source"]

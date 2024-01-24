@@ -1,11 +1,12 @@
 import json
-from langchain.retrievers import AmazonKendraRetriever as KendraRetriever
+from langchain_community.retrievers import AmazonKendraRetriever as KendraRetriever
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts import PromptTemplate
 from connections import Connections
 from collections import OrderedDict
 from prompt_templates import CONVERSATION_CHAIN_TEMPLATE
+import logging
 
 s3_resource = Connections.s3_resource
 
@@ -14,7 +15,8 @@ def source_link(input_source):
     """
     Retrieve source url of relevant documents
     """
-    string = input_source.partition(f"s3.{Connections.region_name}.amazonaws.com/")[2]
+    string = input_source.partition(
+        f"s3.{Connections.region_name}.amazonaws.com/")[2]
     bucket = string.partition("/")[0]
     obj = string.partition("/")[2]
     file = s3_resource.Object(bucket, obj)
@@ -79,5 +81,5 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
 
     # Data to be written
     output = {"source": refs_str, "answer": answer}
-    print(output)
+    logging.debug(output)
     return output

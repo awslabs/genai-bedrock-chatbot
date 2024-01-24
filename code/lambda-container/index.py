@@ -3,6 +3,7 @@ from app_question_intent import get_question_intent_general
 from sagemaker_dg_rag import doc_retrieval
 from sagemaker_agent import agent_call
 from connections import Connections
+import logging
 
 
 def get_response(user_input, session_id):
@@ -18,13 +19,13 @@ def get_response(user_input, session_id):
     )
 
     qintent = get_question_intent_general(llm=llm_qintent, query=user_input)
-    print(f"Question {user_input}")
-    print(f"Intent: {qintent}")
+    logging.debug(f"Question {user_input}")
+    logging.debug(f"Intent: {qintent}")
     if qintent == "UseCase2":
         response = query_engine.query(user_input)
-        print(response.response)
-        print("")
-        print(response.metadata["sql_query"])
+        logging.debug(response.response)
+        logging.debug("")
+        logging.debug(response.metadata["sql_query"])
         output = {
             "source": response.metadata["sql_query"], "answer": response.response}
     elif qintent == "UseCase1":

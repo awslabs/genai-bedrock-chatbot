@@ -6,10 +6,11 @@ from llama_index import SQLDatabase
 from llama_index import ServiceContext
 
 # from utils import table_details, Connections, create_sql_engine
-from langchain.embeddings import BedrockEmbeddings
+from langchain_community.embeddings import BedrockEmbeddings
 from llama_index.prompts import Prompt
 from connections import Connections
 from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
+import logging
 
 
 table_details = {
@@ -41,7 +42,7 @@ def create_sql_engine():
 
 def display_prompt_dict(prompts_dict):
     for k, p in prompts_dict.items():
-        print(p.get_template())
+        logging.debug(p.get_template())
 
 
 def create_query_engine(
@@ -81,7 +82,7 @@ def create_query_engine(
         response_synthesis_prompt=RESPONSE_PROMPT,
     )
     prompts_dict = query_engine.get_prompts()
-    print("prompts_dict", prompts_dict)
+    logging.debug("prompts_dict", prompts_dict)
     return query_engine, obj_index
 
 
