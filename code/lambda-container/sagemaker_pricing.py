@@ -46,7 +46,7 @@ def display_prompt_dict(prompts_dict):
 
 
 def create_query_engine(
-    model_name="Claude1", SQL_PROMPT=SQL_PROMPT, RESPONSE_PROMPT=RESPONSE_PROMPT
+    model_name="Claude2.1", SQL_PROMPT=SQL_PROMPT, RESPONSE_PROMPT=RESPONSE_PROMPT
 ):
     # create sql database object
     engine = create_sql_engine()
@@ -60,12 +60,15 @@ def create_query_engine(
         client=Connections.bedrock_client, model_id="amazon.titan-embed-text-v1"
     )
     # initialize service context
-    service_context = ServiceContext.from_defaults(
-        llm=llm, embed_model=embeddings)
+    service_context = ServiceContext.from_defaults(llm=llm, embed_model=embeddings)
 
-    # tables = list(sql_database._all_tables)
     table_node_mapping = SQLTableNodeMapping(sql_database)
     table_schema_objs = []
+    tables = list(sql_database._all_tables)
+    for table in tables:
+        table_schema_objs.append(
+            (SQLTableSchema(table_name=table, context_str=table_details[table]))
+        )
 
     obj_index = ObjectIndex.from_objects(
         table_schema_objs,
