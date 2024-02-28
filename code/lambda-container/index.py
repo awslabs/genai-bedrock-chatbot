@@ -30,7 +30,10 @@ def get_response(user_input, session_id):
             "source": response.metadata["sql_query"], "answer": response.response}
     elif qintent == "UseCase1":
         output = doc_retrieval(user_input)
-    else:
+    elif qintent == "UseCase3":
         output = agent_call(llm=llm_agent, query=user_input)
+    else:
+        output = {
+            "source": ' ', "answer": "This is a maclious query. Please ask a proper question."}
 
     return output
