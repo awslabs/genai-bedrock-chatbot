@@ -11,11 +11,11 @@ def get_response(user_input, session_id):
     Get response RAG or Query
     """
     llm_qintent = Connections.get_bedrock_llm(
-        model_name="Claude1", max_tokens=64, cache=False
+        model_name="ClaudeInstant", max_tokens=64, cache=False
     )
 
     llm_agent = Connections.get_bedrock_llm(
-        model_name="Claude2", max_tokens=1024, cache=False
+        model_name="Claude2.1", max_tokens=1024, cache=False
     )
 
     qintent = get_question_intent_general(llm=llm_qintent, query=user_input)
