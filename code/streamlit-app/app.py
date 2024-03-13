@@ -115,7 +115,7 @@ def show_message():
 
             with st.chat_message(
                 name="ai",
-                avatar="https://static.us-east-1.prod.workshops.aws/public/b47fa3b3-57fd-4ef6-8a3c-b5b24d8db469/static/SageMaker_logo.png",
+                avatar="https://assets-global.website-files.com/62b1b25a5edaf66f5056b068/62d1345ba688202d5bfa6776_aws-sagemaker-eyecatch-e1614129391121.png",
             ):
                 st.markdown(st.session_state["answers"][i])
 
