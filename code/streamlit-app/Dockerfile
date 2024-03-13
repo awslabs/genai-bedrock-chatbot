@@ -1,4 +1,4 @@
-FROM python:3.11@sha256:a7de7501a4949068f6ffa6ccc3a1659fb6f78d64407f2cd5a9974140c5e22811
+FROM python:3.11@sha256:47d0618fb878d93e1b8cacb184fd8f727ae95c1b85d5959723e1d3e1848e2aba
 WORKDIR /app
 COPY requirements.txt ./requirements.txt
 RUN pip3 install -r requirements.txt --no-cache-dir

@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from llama_index.objects import ObjectIndex, SQLTableNodeMapping
+from llama_index.objects import ObjectIndex, SQLTableNodeMapping, SQLTableSchema
 from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
 from llama_index import VectorStoreIndex
 from llama_index import SQLDatabase
@@ -17,7 +17,7 @@ table_details = {
     "real_time_inference_price": "real time inference instance price data, includes instance name, price, memory.Use this as default table if non specified",
     "training_price": "training instance price data, includes instance name, price, memory.",
     "asynchronous_inference_price": "asynchronous inference instance price data, includes instance name, price, memory",
-    "inference_accelerator_price": "inference accelarator instance price data, includes instance name, price, memory",
+    "inference_accelerator_price": "inference accelerator instance price data, includes instance name, price, memory",
 }
 
 
@@ -60,14 +60,16 @@ def create_query_engine(
         client=Connections.bedrock_client, model_id="amazon.titan-embed-text-v1"
     )
     # initialize service context
-    service_context = ServiceContext.from_defaults(llm=llm, embed_model=embeddings)
+    service_context = ServiceContext.from_defaults(
+        llm=llm, embed_model=embeddings)
 
     table_node_mapping = SQLTableNodeMapping(sql_database)
     table_schema_objs = []
     tables = list(sql_database._all_tables)
     for table in tables:
         table_schema_objs.append(
-            (SQLTableSchema(table_name=table, context_str=table_details[table]))
+            (SQLTableSchema(table_name=table,
+             context_str=table_details[table]))
         )
 
     obj_index = ObjectIndex.from_objects(

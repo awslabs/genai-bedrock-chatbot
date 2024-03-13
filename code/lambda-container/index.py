@@ -34,6 +34,6 @@ def get_response(user_input, session_id):
         output = agent_call(llm=llm_agent, query=user_input)
     else:
         output = {
-            "source": ' ', "answer": "This is a maclious query. Please ask a proper question."}
+            "source": ' ', "answer": "This is a malicious query. Please ask a proper question."}
 
     return output

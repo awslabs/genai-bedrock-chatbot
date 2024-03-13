@@ -1,9 +1,11 @@
 ## GenAI ChatBot on AWS
 
 ### Introduction
+
 This demo ChatBot application centers around the development of an advanced Chatbot using Amazon Bedrock and AWS's serverless GenAI solution. The solution demonstrates a Chatbot that utilizes the knowledge of the [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs.html?icmpid=docs_sagemaker_lp/index.html) and [SageMaker instance pricing](https://aws.amazon.com/sagemaker/pricing/). This Chatbot serves as an example of the power of Amazon Bedrock in processing and utilizing complex data sets, and it’s capability of converting natural language into Amazon Athena queries. It employs open source tools like LangChain and LLamaIndex to enhance its data processing and retrieval capabilities. The article also highlights the integration of various AWS resources, including Amazon S3 for storage, Amazon Kendra as vector store to support the retrieval augmented generation (RAG), AWS Glue for data preparation, Amazon Athena for efficient querying, Amazon Lambda for serverless computing, and Amazon ECS for container management. These resources collectively enable the Chatbot to effectively retrieve and manage content from documents and databases, illustrating the potential of Amazon Bedrock in sophisticated Chatbot applications.
 
 ### Prerequisites
+
 - Docker
 - AWS CDK Toolkit 2.114.1+, installed installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
 - Python 3.11+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
@@ -22,9 +24,11 @@ This demo ChatBot application centers around the development of an advanced Chat
 - Elastic Load Balancer
 
 ### Target Architecture
+
 ![Architecture Diagram](assets/diagrams/architecture.png)
 
 ### Code
+
 The code repository contains the following files and folders:
 
 - `assets` folder – The various static assets like architecture diagram, public dataset, etc are available here
@@ -40,11 +44,12 @@ The code repository contains the following files and folders:
 **Note:** The AWS CDK code uses [L3 constructs](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) and [AWS managed IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html#aws-managed-policies) for deploying the solution.
 
 ### Deploy Code
+
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-This project is set up like a standard Python project.  The initialization
+This project is set up like a standard Python project. The initialization
 process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
+directory. To create the virtualenv it assumes that there is a `python3`
 (or `python` for Windows) executable in your path with access to the `venv`
 package. If for any reason the automatic creation of the virtualenv fails,
 you can create the virtualenv manually.
@@ -64,7 +69,7 @@ source .venv/bin/activate
 
 If you are a Windows platform, you would activate the virtualenv like this:
 
-```dos
+```powershell
 % .venv\Scripts\activate.bat
 ```
 
@@ -89,11 +94,11 @@ command.
 
 ## Useful commands
 
-* `cdk ls`          list all stacks in the app
-* `cdk synth`       emits the synthesized CloudFormation template
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk docs`        open CDK documentation
+- `cdk ls` list all stacks in the app
+- `cdk synth` emits the synthesized CloudFormation template
+- `cdk deploy` deploy this stack to your default AWS account/region
+- `cdk diff` compare deployed stack with current state
+- `cdk docs` open CDK documentation
 
 ## Security
 
@@ -102,4 +107,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the [LICENSE](LICENSE) file.
-
