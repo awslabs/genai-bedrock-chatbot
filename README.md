@@ -7,10 +7,11 @@ This demo ChatBot application centers around the development of an advanced Chat
 ### Prerequisites
 
 - Docker
-- AWS CDK Toolkit 2.114.1+, installed installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
+- AWS CDK Toolkit 2.132.1+, installed installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
 - Python 3.11+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
 - An [active AWS account](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
-- An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1. The us-east-1 AWS Region is required for Amazon Bedrock Claude model and `amazon.titan-embed-text-v1` access. **Enable Claude and titan embedding model access** in Bedrock service.
+- An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1. The us-east-1 AWS Region is required for Amazon Bedrock Claude and Amazon Titan Embedding model access.
+- Enable Claude and Titan embedding model access in Bedrock service.
 
 ### Target technology stack
 
