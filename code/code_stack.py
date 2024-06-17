@@ -42,7 +42,7 @@ class CodeStack(Stack):
         self.create_streamlit_app(lambda_function, logging_context)
 
     def create_kms_key(self):
-        # Creating new KMS key and confgiure it for S3 object encryption
+        # Creating new KMS key and configure it for S3 object encryption
         kms_key = kms.Key(
             self,
             "KMSKey",
