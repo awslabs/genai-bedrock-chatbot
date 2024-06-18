@@ -6,11 +6,11 @@ from llama_index.core.objects import (
     ObjectIndex,
     SQLTableSchema,
 )
+from llama_index.llms.bedrock import Bedrock
 from llama_index.core.prompts import PromptTemplate
-from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.core.indices.struct_store import SQLTableRetrieverQueryEngine
+from llama_index.embeddings.bedrock import BedrockEmbedding
 from sqlalchemy import create_engine
-from llama_index.core.prompts import PromptTemplate
 from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
 from connections import Connections
 
@@ -53,9 +53,9 @@ def create_query_engine(
     sql_database = SQLDatabase(engine, sample_rows_in_table_info=2)
 
     # initialize llm
-    llm = Connections.get_bedrock_llm(
-        model_name=model_name, max_tokens=1024, cache=False
-    )
+    llm = llm = Bedrock(
+        model="anthropic.claude-3-sonnet-20240229-v1:0",
+        )
     embeddings = BedrockEmbedding(
         client=Connections.bedrock_client, model_id="amazon.titan-embed-text-v1"
     )
