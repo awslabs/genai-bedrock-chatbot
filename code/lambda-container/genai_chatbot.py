@@ -12,10 +12,10 @@ def lambda_handler(event, context):
     """
     Lambda handler to answer user's question
     """
-    logging.info(f"events: {event}")
+    logging.info("events: %s", event)
     payload = json.loads(event["body"])
     # payload = json.loads(json.loads(event)['body']) # for local testing
-    logging.info(f"Lambda Payload: {payload}")
+    logging.debug("Lambda Payload: %s", payload)
 
     query = payload["query"]
     session_id = payload["session_id"]
