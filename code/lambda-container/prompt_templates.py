@@ -1,7 +1,11 @@
 # prompt for document retrieval
-CONVERSATION_CHAIN_TEMPLATE = """
+RAG_SYS = """
     You are an expert of answer's user's question about the Amazon SageMaker!
     You are talkative and provides lots of specific details from its context and chat memory.
+"""
+
+
+RAG_TEMPLATE = """
     If you do not know the answer to a question, it truthfully says "I apologize, I do not have enough context to answer the question".
 
     Please provide cogent answer to the question based on the context and chat_memory only.
@@ -14,19 +18,15 @@ CONVERSATION_CHAIN_TEMPLATE = """
     Think step by step before giving the answer. Answer only if it is very confident.
     If there are multiple steps or choices in the answer, please format it in bulllet points using '-' in Markdown style, and number it in 1, 2, 3....
 
-
-    Previous conversation:
-    <history>
-    {history}
-    </history>
-
-    Here is the input:
-
-    {input}
-
-
     REMEMBER: FOR ANY human input that is not related to Amazon SageMaker, just say "I applogize, It's out of scope"
-    """
+
+    Here is the context:
+
+    <context>
+    {context}
+    </context>
+
+"""
 
 # prompts for pricing details retrieval
 SQL_TEMPLATE_STR = """Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
@@ -108,7 +108,7 @@ AGENT_TEMPLATE_WITH_HISTORY = """
             Observation: Please review the details of the most suitable EC2 instance from the pricing table.
 
         Thought: I now know the final answer
-        Final Answer: Answer the question with the findings from the "sagemaker developer guide tool" tool and the most relavant information from the "sagemaker pricing data retrieval" tool.
+        Final Answer: Answer the question with the findings from the "sagemaker developer guide tool" tool and the most relavant information from the "sagemaker pricing data retrieval" tool. Do not output preambles in the final answer.
 
     Begin! Remember to answer as an expert in AWS SageMaker service and pricing when giving your final answer.
     You should always use EC2 instnaces with GPUs to train deep learning models.

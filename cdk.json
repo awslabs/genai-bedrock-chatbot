@@ -16,8 +16,8 @@
   },
   "context": {
     "logging": {
-      "lambda_log_level": "INFO",
-      "streamlit_log_level": "INFO"
+      "lambda_log_level": "DEBUG",
+      "streamlit_log_level": "DEBUG"
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,

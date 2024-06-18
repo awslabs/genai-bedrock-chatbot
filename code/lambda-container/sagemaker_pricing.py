@@ -1,16 +1,18 @@
-from sqlalchemy import create_engine
-from llama_index.objects import ObjectIndex, SQLTableNodeMapping, SQLTableSchema
-from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
-from llama_index import VectorStoreIndex
-from llama_index import SQLDatabase
-from llama_index import ServiceContext
-
-# from utils import table_details, Connections, create_sql_engine
-from langchain_community.embeddings import BedrockEmbeddings
-from llama_index.prompts import Prompt
-from connections import Connections
-from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
 import logging
+from llama_index.core import Settings
+from llama_index.core import SQLDatabase, VectorStoreIndex
+from llama_index.core.objects import (
+    SQLTableNodeMapping,
+    ObjectIndex,
+    SQLTableSchema,
+)
+from llama_index.llms.bedrock import Bedrock
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.indices.struct_store import SQLTableRetrieverQueryEngine
+from llama_index.embeddings.bedrock import BedrockEmbedding
+from sqlalchemy import create_engine
+from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
+from connections import Connections
 
 
 table_details = {
@@ -21,8 +23,8 @@ table_details = {
 }
 
 
-SQL_PROMPT = Prompt(SQL_TEMPLATE_STR)
-RESPONSE_PROMPT = Prompt(RESPONSE_TEMPLATE_STR)
+SQL_PROMPT = PromptTemplate(SQL_TEMPLATE_STR)
+RESPONSE_PROMPT = PromptTemplate(RESPONSE_TEMPLATE_STR)
 
 
 def create_sql_engine():
@@ -40,28 +42,26 @@ def create_sql_engine():
     return engine
 
 
-def display_prompt_dict(prompts_dict):
-    for k, p in prompts_dict.items():
-        logging.debug(p.get_template())
-
-
 def create_query_engine(
-    model_name="Claude2.1", SQL_PROMPT=SQL_PROMPT, RESPONSE_PROMPT=RESPONSE_PROMPT
+    model_name="Claude3Sonnet", SQL_PROMPT=SQL_PROMPT, RESPONSE_PROMPT=RESPONSE_PROMPT
 ):
+    """
+    Create query engine
+    """
     # create sql database object
     engine = create_sql_engine()
     sql_database = SQLDatabase(engine, sample_rows_in_table_info=2)
 
     # initialize llm
-    llm = Connections.get_bedrock_llm(
-        model_name=model_name, max_tokens=1024, cache=False
-    )
-    embeddings = BedrockEmbeddings(
+    llm = llm = Bedrock(
+        model="anthropic.claude-3-sonnet-20240229-v1:0",
+        )
+    embeddings = BedrockEmbedding(
         client=Connections.bedrock_client, model_id="amazon.titan-embed-text-v1"
     )
-    # initialize service context
-    service_context = ServiceContext.from_defaults(
-        llm=llm, embed_model=embeddings)
+
+    Settings.llm = llm
+    Settings.embed_model = embeddings
 
     table_node_mapping = SQLTableNodeMapping(sql_database)
     table_schema_objs = []
@@ -76,18 +76,16 @@ def create_query_engine(
         table_schema_objs,
         table_node_mapping,
         VectorStoreIndex,
-        service_context=service_context,
     )
 
     query_engine = SQLTableRetrieverQueryEngine(
         sql_database,
         obj_index.as_retriever(similarity_top_k=5),
-        service_context=service_context,
         text_to_sql_prompt=SQL_PROMPT,
         response_synthesis_prompt=RESPONSE_PROMPT,
     )
     prompts_dict = query_engine.get_prompts()
-    logging.debug("prompts_dict", prompts_dict)
+    logging.debug("prompts_dict: %s", prompts_dict)
     return query_engine, obj_index
 
 

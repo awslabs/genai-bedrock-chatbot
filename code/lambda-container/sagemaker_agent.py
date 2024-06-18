@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import List, Union
 
 from sagemaker_pricing import query_engine
@@ -142,7 +143,9 @@ def agent_call(llm, query):
         agent=agent, tools=tools, verbose=True, memory=memory
     )
     result = agent_executor.run(f"\n\nHuman:{query}\n\nAssistant:")
+    logging.debug("Agent output: %s", result)
     result = parse_agent_output(result)
+    logging.debug("Parsed agent output: %s", result)
     # Data to be written
     output = {"source": result["source"], "answer": result["text"]}
     # output = {"answer": result}

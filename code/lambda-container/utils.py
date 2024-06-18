@@ -1,4 +1,37 @@
 import re
+from typing import List
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import BaseMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+class InMemoryHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history."""
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    def add_messages(self, messages: List[BaseMessage]) -> None:
+        """Add a list of messages to the store"""
+        self.messages.extend(messages)
+
+    def clear(self) -> None:
+        self.messages = []
+
+
+def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
+    """
+    Get a chat message history by session id.
+
+    Args:
+        session_id: The session id to get the history for.
+
+    Returns:
+        The chat message history for the session id.
+    """
+    store = {}
+    if session_id not in store:
+        store[session_id] = InMemoryHistory()
+    return store[session_id]
 
 
 def parse_agent_output(output):
@@ -12,20 +45,20 @@ def parse_agent_output(output):
     """
 
     # Define regex patterns to match 'text' and 'source' sections
-    text_pattern = r'"text"\s*:\s*"([^"]*)"'
-    source_pattern = r'"source"\s*:\s*"([^"]*)'
+    text_pattern = r"'text'\s*:\s*'([^']*)'"
+    source_pattern = r"'source'\s*:\s*'([^']*)'"
 
     # Use regex to search for and extract the 'text' and 'source' sections
     text_match = re.search(text_pattern, output)
     source_match = re.search(source_pattern, output)
 
     if text_match:
-        text = text_match.group(1)
+        text = text_match.group(1).replace("\\'", "'")  # Handle escaped single quotes
     else:
         text = ""
 
     if source_match:
-        source = source_match.group(1)
+        source = source_match.group(1).replace("\\'", "'")  # Handle escaped single quotes
         source_title, source_link = reformat_source(source)
         source = f"[{source_title}]({source_link})"
     else:
@@ -44,8 +77,6 @@ def reformat_source(source):
     Outpit:
         source_title, source_link (tuple): source file title, and source link
     """
-    import re
-
     # Define the regular expression pattern to match text within square brackets and parentheses
     pattern = r"\[(.*?)\]\(([^)]+)\)"
 
