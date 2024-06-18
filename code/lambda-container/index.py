@@ -1,9 +1,9 @@
+import logging
 from sagemaker_pricing import query_engine
 from app_question_intent import get_question_intent_general
 from sagemaker_dg_rag import doc_retrieval
 from sagemaker_agent import agent_call
 from connections import Connections
-import logging
 
 
 def get_response(user_input, session_id):
@@ -11,16 +11,15 @@ def get_response(user_input, session_id):
     Get response RAG or Query
     """
     llm_qintent = Connections.get_bedrock_llm(
-        model_name="ClaudeInstant", max_tokens=64, cache=False
+        model_name="Claude3Haiku", max_tokens=32, cache=False
     )
 
     llm_agent = Connections.get_bedrock_llm(
-        model_name="Claude2.1", max_tokens=1024, cache=False
+        model_name="Claude2", max_tokens=1024, cache=False, mode='text_completion'
     )
-
     qintent = get_question_intent_general(llm=llm_qintent, query=user_input)
-    logging.debug(f"Question {user_input}")
-    logging.debug(f"Intent: {qintent}")
+    logging.debug("Question %s", user_input)
+    logging.debug("Intent: %s", qintent)
     if qintent == "UseCase2":
         response = query_engine.query(user_input)
         logging.debug(response.response)
