@@ -1,12 +1,17 @@
 import json
-from langchain_community.retrievers import AmazonKendraRetriever as KendraRetriever
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from connections import Connections
+
 from collections import OrderedDict
-from prompt_templates import CONVERSATION_CHAIN_TEMPLATE
+
 import logging
+from operator import itemgetter
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain.schema import StrOutputParser, SystemMessage
+from langchain_community.retrievers import AmazonKendraRetriever as KendraRetriever
+from connections import Connections
+from utils import get_by_session_id
+from prompt_templates import RAG_SYS, RAG_TEMPLATE
+
 
 s3_resource = Connections.s3_resource
 
@@ -30,15 +35,7 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
     """
     Answer user's query about Amazon SageMaker
     """
-    # custom prompt template for ConversationChain(), the defualt template is too simple, and not customerized for Claude models.
-    memory = ConversationBufferMemory(ai_prefix="Assistant")
-    llm = Connections.get_bedrock_llm(model_name=llm_model, max_tokens=1024)
-    custom_prompt = PromptTemplate(
-        input_variables=["history", "input"], template=CONVERSATION_CHAIN_TEMPLATE
-    )
-    conversation = ConversationChain(
-        llm=llm, prompt=custom_prompt, verbose=False, memory=memory
-    )
+    # instantiate retriever
     retriever = KendraRetriever(
         kclient=Connections.kendra_client,
         top_k=K,
@@ -66,19 +63,32 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
         refs_str += f"{i + 1}. " + "[" + str(x[0]) + "](%s)" % (x[1]) + "\n\n"
 
     # put the retrieved information and previous questions and answers in memory
+    context = ""
     for i, doc in enumerate(docs):
-        memory.save_context(
-            {"input": "context: " + doc.metadata["excerpt"]},
-            {"output": ""},
+        context += doc.metadata["excerpt"]
+
+    prompt = ChatPromptTemplate.from_messages(
+            [
+                SystemMessage(content=(RAG_SYS)),
+                HumanMessagePromptTemplate.from_template(RAG_TEMPLATE),
+            ]
         )
+    llm = Connections.get_bedrock_llm(model_name="Claude3Sonnet", max_tokens=1024)
+    rag_chain = {
+            "context": itemgetter("context"),
+        } | prompt | llm | StrOutputParser()
 
-    res = conversation.predict(input=f"\n\nHuman:{query}\n\nAssistant:")
-    # remove the hunman and AI conversation is there is any in the answer
-    res_filter = res.split("Human:", 1)
-    answer = res_filter[0]
-    if answer[0] == " ":
-        answer = answer[1:]
-
+    rag_chain_with_memory = RunnableWithMessageHistory(
+        rag_chain,
+        get_by_session_id,
+        input_messages_key="question",
+        history_messages_key="history",
+    )
+    answer = rag_chain_with_memory.invoke(
+        {"context": context,
+         "question": query},
+        config={"configurable": {"session_id": "1"}}
+    )
     # Data to be written
     output = {"source": refs_str, "answer": answer}
     logging.debug(output)
