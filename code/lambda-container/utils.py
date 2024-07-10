@@ -45,8 +45,8 @@ def parse_agent_output(output):
     """
 
     # Define regex patterns to match 'text' and 'source' sections
-    text_pattern = r"'text'\s*:\s*'([^']*)'"
-    source_pattern = r"'source'\s*:\s*'([^']*)'"
+    text_pattern = r"['\"]text['\"]\s*:\s*['\"]([^']*)['\"]"
+    source_pattern = r"['\"]source['\"]\s*:\s*['\"]([^']*)['\"]"
 
     # Use regex to search for and extract the 'text' and 'source' sections
     text_match = re.search(text_pattern, output)
@@ -58,7 +58,9 @@ def parse_agent_output(output):
         text = ""
 
     if source_match:
-        source = source_match.group(1).replace("\\'", "'")  # Handle escaped single quotes
+        source = source_match.group(1).replace(
+            "\\'", "'"
+        )  # Handle escaped single quotes
         source_title, source_link = reformat_source(source)
         source = f"[{source_title}]({source_link})"
     else:

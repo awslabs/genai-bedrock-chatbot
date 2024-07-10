@@ -36,7 +36,7 @@ def get_question_intent_general(llm, query):
             "answer": "Use Case 1",
         },
         {
-            "query": "What is the cheapeast GPU instance?",
+            "query": "What is the cheapest GPU instance?",
             "answer": "Use Case 1",
         },
         {
@@ -84,7 +84,7 @@ def get_question_intent_general(llm, query):
             "answer": "Use Case 3",
         },
         {
-            "query": "Why p3 instance is bettern than c5 instance in deep learning and what are the cost differences in training?",
+            "query": "Why p3 instance is better than c5 instance in deep learning and what are the cost differences in training?",
             "answer": "Use Case 3",
         },
         {
@@ -104,6 +104,7 @@ def get_question_intent_general(llm, query):
         ]
     )
     few_shot_prompt = FewShotChatMessagePromptTemplate(
+        input_variables=["query"],
         example_prompt=example_prompt,
         examples=examples,
     )
