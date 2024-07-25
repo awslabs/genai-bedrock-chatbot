@@ -2,7 +2,7 @@ boto3>=1.34.61
 llama-index==0.10.45
 llama-index-embeddings-bedrock==0.2.1
 llama-index-llms-bedrock==0.1.9
-langchain==0.2.7
+langchain==0.2.9
 langchain-community==0.2.9
 sqlalchemy==2.0.28
 PyAthena[SQLAlchemy]
