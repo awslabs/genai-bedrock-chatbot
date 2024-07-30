@@ -3,7 +3,7 @@ RUN yum update --security -y && yum clean all
 COPY requirements.txt ${LAMBDA_TASK_ROOT}/
 RUN pip install -r requirements.txt --no-cache-dir
 COPY . ${LAMBDA_TASK_ROOT}
-CMD ["genai_chatbot.lambda_handler"]
+CMD ["genai_chat_app.lambda_handler"]
 USER 1001
 HEALTHCHECK --interval=600s --timeout=2s --retries=12 \
     CMD ["cat", "requirements.txt"]

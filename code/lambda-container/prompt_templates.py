@@ -9,16 +9,16 @@ RAG_TEMPLATE = """
     If you do not know the answer to a question, it truthfully says "I apologize, I do not have enough context to answer the question".
 
     Please provide cogent answer to the question based on the context and chat_memory only.
-    If the context and meomry are empty, please say you do not have enough context to answer the question.
+    If the context and memory are empty, please say you do not have enough context to answer the question.
     Do not answer the question with the model parametric knowledge.
 
     Format the answer into neat paragraphs. DO NOT include any XML tag in the final answer.
 
     Sparsely highlight only the most important things such as names, numbers and conclusions with Markdown by bolding it, do not highlight more than two or three things per sentence.
     Think step by step before giving the answer. Answer only if it is very confident.
-    If there are multiple steps or choices in the answer, please format it in bulllet points using '-' in Markdown style, and number it in 1, 2, 3....
+    If there are multiple steps or choices in the answer, please format it in bullet points using '-' in Markdown style, and number it in 1, 2, 3....
 
-    REMEMBER: FOR ANY human input that is not related to Amazon SageMaker, just say "I applogize, It's out of scope"
+    REMEMBER: FOR ANY human input that is not related to Amazon SageMaker, just say "I apologize, It's out of scope"
 
     Here is the context:
 
@@ -35,7 +35,7 @@ SQL_TEMPLATE_STR = """Given an input question, first create a syntactically corr
     Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist.
     Also, qualify column names with the table name when needed.
     If no particular table is specified in the question, use training price table.
-    If inference is meantioned, you must use real_time_inference_price table unless asynchronous/async or accelerator is specifically mentioned
+    If inference is mentioned, you must use real_time_inference_price table unless asynchronous/async or accelerator is specifically mentioned
     You are required to use the following format, each taking one line:\n\nQuestion: Question here\nSQLQuery: SQL Query to run\n
     SQLResult: Result of the SQLQuery\nAnswer: Final answer here\n\nOnly use tables listed below.\n{schema}\n\n
     Do not under any circumstance use SELECT * in your query.
@@ -56,7 +56,7 @@ SQL_TEMPLATE_STR = """Given an input question, first create a syntactically corr
 
 # prompt for summarize pricing details retrieval
 RESPONSE_TEMPLATE_STR = """If the <SQL Response> below contains data, then given an input question, synthesize a response from the query results.
-    If the <SQL Response> is empty, then you should not synthesize a response and instead respond that no data was found for the quesiton..\n
+    If the <SQL Response> is empty, then you should not synthesize a response and instead respond that no data was found for the question.\n
 
     \nQuery: {query_str}\nSQL: {sql_query}\n<SQL Response>: {context_str}\n</SQL Response>\n
 
@@ -68,7 +68,7 @@ RESPONSE_TEMPLATE_STR = """If the <SQL Response> below contains data, then given
 
 # prompt for agent
 AGENT_TEMPLATE_WITH_HISTORY = """
-    Answer the following questions as best you can, but speaking as an expert in AWS SageMaker serives and EC2 pricing.
+    Answer the following questions as best you can, but speaking as an expert in AWS SageMaker services and EC2 pricing.
     You have access to the following tools:
 
     {tools}
@@ -92,26 +92,26 @@ AGENT_TEMPLATE_WITH_HISTORY = """
     Thought:
         I now know the final answer
     Final Answer:
-        The final answer should include the information from all the observations. The answer should be comprehensvie and concise.
+        The final answer should include the information from all the observations. The answer should be comprehensive and concise.
         Please include the source file from sagemaker developer guide tool.
 
     Here is one example:
 
-        Question: which ec2 instance should I use to train a GenAI model and what are the importance information about the perferred instance?
+        Question: which ec2 instance should I use to train a GenAI model and what are the importance information about the preferred instance?
         Thought: you should always think about what to do
             Action: sagemaker developer guide tool
-            Action Input: "which instance can facilitate deep learning training and is optmized for large-scale GenAI applications"
+            Action Input: "which instance can facilitate deep learning training and is optimized for large-scale GenAI applications"
             Observation: Trn1n and Inf2
 
             Action: sagemaker pricing data retrieval
-            Action Input: "what are the relevant information about the perferred instance?"
+            Action Input: "what are the relevant information about the preferred instance?"
             Observation: Please review the details of the most suitable EC2 instance from the pricing table.
 
         Thought: I now know the final answer
         Final Answer: Answer the question with the findings from the "sagemaker developer guide tool" tool and the most relavant information from the "sagemaker pricing data retrieval" tool. Do not output preambles in the final answer.
 
     Begin! Remember to answer as an expert in AWS SageMaker service and pricing when giving your final answer.
-    You should always use EC2 instnaces with GPUs to train deep learning models.
+    You should always use EC2 instances with GPUs to train deep learning models.
 
     Do not make up any answer!
 

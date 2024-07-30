@@ -148,7 +148,8 @@ def get_question_intent_general(llm, query):
     chain = final_prompt | llm
 
     res = chain.invoke({"query": query})
-    logging.debug("Question intent for %s: %s", query, res)
+
+    logging.info("Question intent for %s: %s", query, res)
     qintent = res.content
     qintent = "".join(qintent.replace("\n", "").split(" "))
     return qintent

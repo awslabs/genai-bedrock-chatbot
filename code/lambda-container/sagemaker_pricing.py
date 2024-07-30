@@ -55,7 +55,7 @@ def create_query_engine(
     # initialize llm
     llm = llm = Bedrock(
         model="anthropic.claude-3-sonnet-20240229-v1:0",
-        )
+    )
     embeddings = BedrockEmbedding(
         client=Connections.bedrock_client, model_id="amazon.titan-embed-text-v1"
     )
@@ -68,8 +68,7 @@ def create_query_engine(
     tables = list(sql_database._all_tables)
     for table in tables:
         table_schema_objs.append(
-            (SQLTableSchema(table_name=table,
-             context_str=table_details[table]))
+            (SQLTableSchema(table_name=table, context_str=table_details[table]))
         )
 
     obj_index = ObjectIndex.from_objects(

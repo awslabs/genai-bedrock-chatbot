@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This application is a simple UI for the chatbot powered by Amazon Bedrock Agent. The application is deployed in Amazon ECS, AWS Fargate. There is one Application Load Balancer associated with it.
+This application is a simple UI for the chat assistant powered by Amazon Bedrock Agent. The application is deployed in Amazon ECS, AWS Fargate. There is one Application Load Balancer associated with it.
 
 ## Component Details
 

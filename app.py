@@ -10,21 +10,28 @@ from aws_cdk import Aspects
 
 app = cdk.App()
 
-appStack = CodeStack(app, "chatbot-stack",
-                     env=cdk.Environment(account=os.getenv(
-                         'CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-                     )
+appStack = CodeStack(
+    app,
+    "chat-assistant-stack",
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
+    ),
+)
 Aspects.of(appStack).add(cdk_nag.AwsSolutionsChecks())
 
-NagSuppressions.add_stack_suppressions(appStack,
-                                       suppressions=[{'id': 'AwsSolutions-IAM5',
-                                                      'reason': 'Dynamic resource creation'
-                                                      },
-                                                     {'id': 'AwsSolutions-IAM4',
-                                                      'reason': 'Managed policies are used for log stream access'
-                                                      },
-                                                     {'id': 'AwsSolutions-L1',
-                                                      'reason': 'Lambda auto-created by CDK library construct'
-                                                      }])
+NagSuppressions.add_stack_suppressions(
+    appStack,
+    suppressions=[
+        {"id": "AwsSolutions-IAM5", "reason": "Dynamic resource creation"},
+        {
+            "id": "AwsSolutions-IAM4",
+            "reason": "Managed policies are used for log stream access",
+        },
+        {
+            "id": "AwsSolutions-L1",
+            "reason": "Lambda auto-created by CDK library construct",
+        },
+    ],
+)
 
 app.synth()

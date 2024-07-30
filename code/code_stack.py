@@ -31,13 +31,17 @@ class CodeStack(Stack):
 
         logging_context = dict(self.node.try_get_context("logging"))
         kms_key = self.create_kms_key()
-        kendra_bucket, sagemaker_bucket = self.create_data_source_bucket(
-            kms_key)
+        kendra_bucket, sagemaker_bucket = self.create_data_source_bucket(kms_key)
         kendra_index = self.create_kendra_index(kendra_bucket, kms_key)
         self.upload_files_to_s3(kendra_bucket, sagemaker_bucket, kms_key)
         glue_database, _ = self.create_glue_database(sagemaker_bucket, kms_key)
         lambda_function = self.create_lambda_function(
-            kendra_index, kendra_bucket, sagemaker_bucket, kms_key, glue_database, logging_context
+            kendra_index,
+            kendra_bucket,
+            sagemaker_bucket,
+            kms_key,
+            glue_database,
+            logging_context,
         )
         self.create_streamlit_app(lambda_function, logging_context)
 
@@ -71,8 +75,7 @@ class CodeStack(Stack):
                 }
             )
         )
-        kms_key.grant_encrypt_decrypt(
-            iam.ServicePrincipal("kendra.amazonaws.com"))
+        kms_key.grant_encrypt_decrypt(iam.ServicePrincipal("kendra.amazonaws.com"))
         kms_key.grant_encrypt_decrypt(
             iam.ServicePrincipal(f"logs.{Aws.REGION}.amazonaws.com")
         )
@@ -149,8 +152,7 @@ class CodeStack(Stack):
                 effect=iam.Effect.ALLOW,
                 resources=["*"],
                 actions=["cloudwatch:PutMetricData"],
-                conditions={"StringEquals": {
-                    "cloudwatch:namespace": "AWS/Kendra"}},
+                conditions={"StringEquals": {"cloudwatch:namespace": "AWS/Kendra"}},
             )
         )
         kendra_index_role.add_to_policy(
@@ -171,21 +173,19 @@ class CodeStack(Stack):
         index = kendra.CfnIndex(
             self,
             "KendraIndex",
-            name=f"{Aws.STACK_NAME}-chatbot-index",
+            name=f"{Aws.STACK_NAME}-chat-index",
             role_arn=kendra_index_role.role_arn,
             edition="DEVELOPER_EDITION",
-            description="Kendra index for GenAI Chatbot",
+            description="Kendra index for GenAI Chat Assistant",
             user_context_policy="ATTRIBUTE_FILTER",
             server_side_encryption_configuration=kendra.CfnIndex.ServerSideEncryptionConfigurationProperty(
                 kms_key_id=kms_key.key_id
             ),
         )
 
-        index_data_source = self.create_kendra_index_source(
-            index, bucket, kms_key)
+        index_data_source = self.create_kendra_index_source(index, bucket, kms_key)
         CfnOutput(self, "KendraIndexId", value=index.ref)
-        CfnOutput(self, "KendraIndexDataSourceName",
-                  value=index_data_source.name)
+        CfnOutput(self, "KendraIndexDataSourceName", value=index_data_source.name)
         return index
 
     def create_kendra_index_source(self, kendra_index, bucket, kms_key):
@@ -212,7 +212,7 @@ class CodeStack(Stack):
         index_data_source = kendra.CfnDataSource(
             self,
             "KendraIndexDataSource",
-            name=f"{Aws.STACK_NAME}-chatbot-index",
+            name=f"{Aws.STACK_NAME}-chat-index",
             index_id=kendra_index.ref,
             type="S3",
             data_source_configuration=kendra.CfnDataSource.DataSourceConfigurationProperty(
@@ -231,8 +231,9 @@ class CodeStack(Stack):
             "KendraDocumentDeployment",
             sources=[
                 s3deploy.Source.asset(
-                    path.join(os.getcwd(), ASSETS_FOLDER_NAME,
-                              "kendra_documents/sm_dg.zip")
+                    path.join(
+                        os.getcwd(), ASSETS_FOLDER_NAME, "kendra_documents/sm_dg.zip"
+                    )
                 )
             ],
             destination_bucket=kendra_bucket,
@@ -244,8 +245,7 @@ class CodeStack(Stack):
             "SagemakerPricingDeployment",
             sources=[
                 s3deploy.Source.asset(
-                    path.join(os.getcwd(), ASSETS_FOLDER_NAME,
-                              "sagemaker_source")
+                    path.join(os.getcwd(), ASSETS_FOLDER_NAME, "sagemaker_source")
                 )
             ],
             destination_bucket=sagemaker_bucket,
@@ -338,7 +338,15 @@ class CodeStack(Stack):
 
         return glue_database, cfn_crawler
 
-    def create_lambda_function(self, kendra_index, kendra_bucket, sagemaker_bucket, kms_key, glue_database, logging_context):
+    def create_lambda_function(
+        self,
+        kendra_index,
+        kendra_bucket,
+        sagemaker_bucket,
+        kms_key,
+        glue_database,
+        logging_context,
+    ):
         # Create AWS Lambda function
         ecr_image = lambda_.EcrImageCode.from_asset_image(
             directory=path.join(os.getcwd(), "code", "lambda-container"),
@@ -372,8 +380,8 @@ class CodeStack(Stack):
         lambda_function = lambda_.Function(
             self,
             "LambdaFunction",
-            function_name=f"{Aws.STACK_NAME}-chatbot-lambda",
-            description="Lambda code for GenAI Chatbot",
+            function_name=f"{Aws.STACK_NAME}-chat-lambda",
+            description="Lambda code for GenAI Chat Assistant",
             architecture=lambda_.Architecture.ARM_64,
             handler=lambda_.Handler.FROM_IMAGE,
             runtime=lambda_.Runtime.FROM_IMAGE,
@@ -407,7 +415,7 @@ class CodeStack(Stack):
     def create_streamlit_app(self, lambda_function, logging_context):
         # Create a VPC
         vpc = ec2.Vpc(
-            self, "ChatBotDemoVPC", max_azs=2, vpc_name=f"{Aws.STACK_NAME}-vpc"
+            self, "DemoVPC", max_azs=2, vpc_name=f"{Aws.STACK_NAME}-vpc"
         )
         NagSuppressions.add_resource_suppressions(
             vpc,
@@ -419,7 +427,7 @@ class CodeStack(Stack):
         # Create ECS cluster
         cluster = ecs.Cluster(
             self,
-            "ChatBotDemoCluster",
+            "DemoCluster",
             cluster_name=f"{Aws.STACK_NAME}-ecs-cluster",
             container_insights=True,
             vpc=vpc,
@@ -434,7 +442,7 @@ class CodeStack(Stack):
         #  Create Fargate service
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
-            "ChatBotService",
+            "AppService",
             cluster=cluster,
             cpu=2048,
             desired_count=1,
@@ -447,7 +455,7 @@ class CodeStack(Stack):
                     "LOG_LEVEL": logging_context["streamlit_log_level"],
                 },
             ),
-            service_name=f"{Aws.STACK_NAME}-chatbot-service",
+            service_name=f"{Aws.STACK_NAME}-chat-service",
             memory_limit_mib=4096,
             public_load_balancer=True,
             platform_version=ecs.FargatePlatformVersion.LATEST,
@@ -468,7 +476,7 @@ class CodeStack(Stack):
             suppressions=[
                 {
                     "id": "AwsSolutions-EC23",
-                    "reason": "Enabling Chatbot access in HTTP port",
+                    "reason": "Enabling Chat Assistant access in HTTP port",
                 }
             ],
             apply_to_children=True,

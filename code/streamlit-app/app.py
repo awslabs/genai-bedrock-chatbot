@@ -1,6 +1,7 @@
 """
 Starting script of streamlit app.
 """
+
 from datetime import datetime
 import logging
 import json
@@ -21,8 +22,7 @@ def get_response(user_input, session_id):
     Get response from genai Lambda
     """
     logger.debug(f"session id: {session_id}")
-    payload = {"body": json.dumps(
-        {"query": user_input, "session_id": session_id})}
+    payload = {"body": json.dumps({"query": user_input, "session_id": session_id})}
 
     lambda_function_name = Connections.lambda_function_name
 
@@ -43,7 +43,7 @@ def header():
     """
     # --- Set up the page ---
     st.set_page_config(
-        page_title="SageMaker (Pricing) Chatbot", page_icon=":rock:", layout="centered"
+        page_title="SageMaker (Pricing) Chat Assistant", page_icon=":rock:", layout="centered"
     )
     st.image(
         "https://pypi-camo.global.ssl.fastly.net/a16d902540297868fece35aa6b6704677f07ad90/68747470733a2f2f6769746875622e636f6d2f6177732f736167656d616b65722d707974686f6e2d73646b2f7261772f6d61737465722f6272616e64696e672f69636f6e2f736167656d616b65722d62616e6e65722e706e67",
@@ -80,8 +80,7 @@ def show_message():
     # --- Start the session when there is user input ---
     user_input = st.text_input("# **Question:** 👇", "", key="input")
     # Start a new conversation
-    new_conversation = st.button(
-        "New Conversation", key="clear", on_click=clear_input)
+    new_conversation = st.button("New Conversation", key="clear", on_click=clear_input)
     if new_conversation:
         st.session_state.session_id = str(datetime.now()).replace(" ", "_")
         st.session_state.user_input = ""

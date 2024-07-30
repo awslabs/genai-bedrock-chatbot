@@ -20,8 +20,7 @@ def source_link(input_source):
     """
     Retrieve source url of relevant documents
     """
-    string = input_source.partition(
-        f"s3.{Connections.region_name}.amazonaws.com/")[2]
+    string = input_source.partition(f"s3.{Connections.region_name}.amazonaws.com/")[2]
     bucket = string.partition("/")[0]
     obj = string.partition("/")[2]
     file = s3_resource.Object(bucket, obj)
@@ -68,15 +67,20 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
         context += doc.metadata["excerpt"]
 
     prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessage(content=(RAG_SYS)),
-                HumanMessagePromptTemplate.from_template(RAG_TEMPLATE),
-            ]
-        )
+        [
+            SystemMessage(content=(RAG_SYS)),
+            HumanMessagePromptTemplate.from_template(RAG_TEMPLATE),
+        ]
+    )
     llm = Connections.get_bedrock_llm(model_name="Claude3Sonnet", max_tokens=1024)
-    rag_chain = {
+    rag_chain = (
+        {
             "context": itemgetter("context"),
-        } | prompt | llm | StrOutputParser()
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
     rag_chain_with_memory = RunnableWithMessageHistory(
         rag_chain,
@@ -85,9 +89,8 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
         history_messages_key="history",
     )
     answer = rag_chain_with_memory.invoke(
-        {"context": context,
-         "question": query},
-        config={"configurable": {"session_id": "1"}}
+        {"context": context, "question": query},
+        config={"configurable": {"session_id": "1"}},
     )
     # Data to be written
     output = {"source": refs_str, "answer": answer}
