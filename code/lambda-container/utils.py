@@ -9,6 +9,9 @@ class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history."""
 
     messages: List[BaseMessage] = Field(default_factory=list)
+    
+    class Config:
+        arbitrary_types_allowed = True
 
     def add_messages(self, messages: List[BaseMessage]) -> None:
         """Add a list of messages to the store"""

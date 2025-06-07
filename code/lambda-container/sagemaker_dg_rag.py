@@ -39,6 +39,7 @@ def doc_retrieval(query, llm_model="ClaudeInstant", K=5):
         kclient=Connections.kendra_client,
         top_k=K,
         index_id=Connections.kendra_rawdata_index_id,
+        min_score_confidence=0.1,  # Added parameter to fix validation error
     )
     docs = retriever._get_relevant_documents(query, run_manager=None)
 

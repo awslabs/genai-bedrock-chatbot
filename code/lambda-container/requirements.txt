@@ -1,8 +1,8 @@
-boto3>=1.34.61
-llama-index==0.12.28
-llama-index-embeddings-bedrock==0.2.1
-llama-index-llms-bedrock==0.1.9
-langchain==0.3.0
-langchain-community==0.2.19
-sqlalchemy==2.0.28
-PyAthena[SQLAlchemy]
+boto3==1.36.1
+llama-index==0.12.40
+llama-index-embeddings-bedrock==0.5.0
+llama-index-llms-bedrock==0.3.8
+langchain==0.3.25
+langchain-community==0.3.24
+sqlalchemy
+PyAthena[SQLAlchemy]==3.14.1
