@@ -1,5 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.11@sha256:4c04b142654ce3d1b8d705880bf5c720599b5984fd4c751763f09f1682308490
-RUN yum update --security -y && yum clean all
+FROM public.ecr.aws/lambda/python:3.13@sha256:1ef8416e080a80b98b8ca15e6d16cd952d04a4cfd82ad749f009e2c23cbda59a
 COPY requirements.txt ${LAMBDA_TASK_ROOT}/
 RUN pip install -r requirements.txt --no-cache-dir
 COPY . ${LAMBDA_TASK_ROOT}
