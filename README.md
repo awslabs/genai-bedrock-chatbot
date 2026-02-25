@@ -2,7 +2,18 @@
 
 ## Introduction
 
-This demo Chat Assistant application centers around the development of an advanced Chat Assistant using Amazon Bedrock and AWS's serverless GenAI solution. The solution demonstrates a Chat Assistant that utilizes the knowledge of the [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs.html?icmpid=docs_sagemaker_lp/index.html) and [SageMaker instance pricing](https://aws.amazon.com/sagemaker/pricing/). This Chat Assistant serves as an example of the power of Amazon Bedrock in processing and utilizing complex data sets, and it’s capability of converting natural language into Amazon Athena queries. It employs open source tools like LangChain and LLamaIndex to enhance its data processing and retrieval capabilities. The article also highlights the integration of various AWS resources, including Amazon S3 for storage, Amazon Kendra as vector store to support the retrieval augmented generation (RAG), AWS Glue for data preparation, Amazon Athena for efficient querying, Amazon Lambda for serverless computing, and Amazon ECS for container management. These resources collectively enable the Chat Assistant to effectively retrieve and manage content from documents and databases, illustrating the potential of Amazon Bedrock in sophisticated Chat Assistant applications.
+This demo Chat Assistant application centers around the development of an advanced Chat Assistant using Amazon Bedrock and AWS's serverless GenAI solution. The solution demonstrates a Chat Assistant that utilizes the knowledge of the [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/gs.html?icmpid=docs_sagemaker_lp/index.html) and [SageMaker instance pricing](https://aws.amazon.com/sagemaker/pricing/). This Chat Assistant serves as an example of the power of Amazon Bedrock in processing and utilizing complex data sets, and its capability of converting natural language into Amazon Athena queries. It employs open source tools like LangChain and LlamaIndex to enhance its data processing and retrieval capabilities. The solution integrates various AWS resources, including Amazon S3 for storage, Amazon Kendra as vector store to support the retrieval augmented generation (RAG), AWS Glue for data preparation, Amazon Athena for efficient querying, Amazon Lambda for serverless computing, and Amazon ECS for container management. These resources collectively enable the Chat Assistant to effectively retrieve and manage content from documents and databases, illustrating the potential of Amazon Bedrock in sophisticated Chat Assistant applications.
+
+### Models
+
+The application uses the following Amazon Bedrock models via [global cross-region inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html) for enhanced throughput and availability:
+
+| Use Case | Model | Inference Profile ID |
+|----------|-------|---------------------|
+| Intent Classification | Claude Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| RAG & Agent | Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` |
+| SQL/Pricing Queries | Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` |
+| Embeddings | Amazon Titan Text Embeddings V2 | `amazon.titan-embed-text-v2:0` |
 
 ### Deployment
 
@@ -17,15 +28,15 @@ For a chat-assistant solution using Agents for Amazon Bedrock, please refer:
 ### Prerequisites
 
 - Docker
-- AWS CDK Toolkit 2.132.1+, installed installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
-- Python 3.11+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
+- AWS CDK Toolkit 2.240.0+, installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
+- Python 3.13+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
 - An [active AWS account](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
-- An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1. The us-east-1 AWS Region is required for Amazon Bedrock Claude and Amazon Titan Embedding model access.
-- Enable Claude and Titan embedding model access in Bedrock service.
+- An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1.
+- Enable Claude Haiku 4.5, Claude Sonnet 4.6, and Amazon Titan Text Embeddings V2 model access in the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/).
 
 ### Target technology stack
 
-- Amazon Bedrock
+- Amazon Bedrock (Claude Haiku 4.5, Claude Sonnet 4.6, Titan Embeddings V2)
 - Amazon ECS
 - AWS Glue
 - AWS Lambda
@@ -42,15 +53,26 @@ For a chat-assistant solution using Agents for Amazon Bedrock, please refer:
 
 The code repository contains the following files and folders:
 
-- `assets` folder – The various static assets like architecture diagram, public dataset, etc are available here
-- `code/lambda-container` folder– The Python code that is run in the Lambda function
-- `code/streamlit-app` folder– The Python code that is run as the container image in ECS
-- `tests` folder – The Python files that is run to unit test the AWS CDK constructs
-- `code/code_stack.py` – The AWS CDK construct Python files used to create AWS resources
-- `app.py` – The AWS CDK stack Python files used to deploy AWS resources in target AWS account
-- `requirements.txt` – The list of all Python dependencies that must be installed for AWS CDK
-- `requirements-dev.txt` – The list of all Python dependencies that must be installed for AWS CDK to run the unit test suite
-- `cdk.json` – The input file to provide values required to spin up resources
+- `assets` folder – Static assets like architecture diagram, public dataset, etc.
+- `code/lambda-container` folder – Python code for the Lambda function (LangChain, LlamaIndex, Bedrock integration)
+- `code/streamlit-app` folder – Python code for the Streamlit container image running in ECS
+- `tests` folder – Unit tests for the AWS CDK constructs
+- `code/code_stack.py` – AWS CDK construct for creating all AWS resources
+- `app.py` – AWS CDK stack entry point for deployment
+- `requirements.txt` – Python dependencies for AWS CDK
+- `requirements-dev.txt` – Python dependencies for running the unit test suite
+- `cdk.json` – CDK configuration and context values
+
+### Key Dependencies
+
+| Component | Package | Version |
+|-----------|---------|---------|
+| Infrastructure | `aws-cdk-lib` | 2.240.0 |
+| LLM Integration | `langchain-aws` | 1.3.0 |
+| LLM Framework | `langchain` | 1.2.10 |
+| Agent Orchestration | `langgraph` | 1.0.9 |
+| SQL Query Engine | `llama-index-core` | 0.13.0 |
+| Frontend | `streamlit` | 1.54.0 |
 
 **Note:** The AWS CDK code uses [L3 constructs](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) and [AWS managed IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html#aws-managed-policies) for deploying the solution.
 

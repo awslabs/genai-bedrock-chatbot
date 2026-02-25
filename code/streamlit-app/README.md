@@ -2,23 +2,29 @@
 
 ## Introduction
 
-This application is a simple UI for the chat assistant powered by Amazon Bedrock Agent. The application is deployed in Amazon ECS, AWS Fargate. There is one Application Load Balancer associated with it.
+This application is the frontend UI for the GenAI Chat Assistant powered by Amazon Bedrock. The application is deployed in Amazon ECS (AWS Fargate) with an Application Load Balancer on port 8080.
 
 ## Component Details
 
 #### Prerequisites
 
-- All resources defined in the code stack deployed successfully
+- All resources defined in the CDK stack deployed successfully
+- Lambda function `chat-assistant-stack-chat-lambda` is running
 
 #### Technology stack
 
-- [Amazon ECS](https://aws.amazon.com/ecs/)
-- [Application Load Balancer](https://aws.amazon.com/elasticloadbalancing/application-load-balancer/)
+- [Streamlit](https://streamlit.io/) 1.54.0
+- [Amazon ECS](https://aws.amazon.com/ecs/) (Fargate, ARM64)
+- [Application Load Balancer](https://aws.amazon.com/elasticloadbalancing/application-load-balancer/) (port 8080)
+- Python 3.13
 
 ### Run Locally
 
 ```bash
-streamlit run app.py --server.runOnSave true --server.port 8504
+export LAMBDA_FUNCTION_NAME=chat-assistant-stack-chat-lambda
+export AWS_REGION=us-east-1
+export LOG_LEVEL=INFO
+streamlit run app.py --server.runOnSave true --server.port 8501
 ```
 
 ### User Interface

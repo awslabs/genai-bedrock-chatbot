@@ -12,11 +12,11 @@ def get_response(user_input, session_id):
     """
     logging.info("Getting response from RAG or Query or Agent Call")
     llm_qintent = Connections.get_bedrock_llm(
-        model_name="Claude3Haiku", max_tokens=32, cache=False
+        model_name="ClaudeHaiku", max_tokens=32, cache=False
     )
 
     llm_agent = Connections.get_bedrock_llm(
-        model_name="Claude2", max_tokens=1024, cache=False, mode="text_completion"
+        model_name="ClaudeSonnet", max_tokens=1024, cache=False
     )
     qintent = get_question_intent_general(llm=llm_qintent, query=user_input)
     logging.debug("Question %s", user_input)

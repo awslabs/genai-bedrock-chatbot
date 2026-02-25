@@ -5,7 +5,6 @@ def clear_input():
     """
     Clear input when clicking `Clear conversation`.
     """
-    # st.session_state.session_id = ""
     st.session_state.questions = []
     st.session_state.answers = []
     st.session_state["temp"] = st.session_state["input"]
@@ -36,9 +35,8 @@ def show_footer() -> None:
     """
     Show footer with AWS copyright
     """
-
     st.markdown("---")
     st.markdown(
-        "<div style='text-align: right'> © 2023 Amazon Web Services </div>",
+        "<div style='text-align: right'> © 2026 Amazon Web Services </div>",
         unsafe_allow_html=True,
     )

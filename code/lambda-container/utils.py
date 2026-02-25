@@ -2,14 +2,14 @@ import re
 from typing import List
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class InMemoryHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history."""
 
     messages: List[BaseMessage] = Field(default_factory=list)
-    
+
     class Config:
         arbitrary_types_allowed = True
 

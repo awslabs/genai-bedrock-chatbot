@@ -7,7 +7,6 @@ import logging
 import json
 import streamlit as st
 
-# from streamlit_chat import message
 from utils import clear_input, show_empty_container, show_footer
 from connections import Connections
 
@@ -34,6 +33,11 @@ def get_response(user_input, session_id):
     response_output = json.loads(response["Payload"].read().decode("utf-8"))
     logger.debug(f"response_output from genai lambda: {response_output}")
 
+    if "FunctionError" in response:
+        error_msg = response_output.get("errorMessage", "Unknown Lambda error")
+        logger.error(f"Lambda error: {error_msg}")
+        return {"source": " ", "answer": f"Error: {error_msg}"}
+
     return response_output
 
 
@@ -41,7 +45,6 @@ def header():
     """
     App Header setting
     """
-    # --- Set up the page ---
     st.set_page_config(
         page_title="SageMaker (Pricing) Chat Assistant", page_icon=":rock:", layout="centered"
     )
@@ -56,9 +59,8 @@ def header():
 
 def initialization():
     """
-    Initialize sesstion_state variablesß
+    Initialize session_state variables
     """
-    # --- Initialize session_state ---
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(datetime.now()).replace(" ", "_")
         st.session_state.questions = []
@@ -67,7 +69,6 @@ def initialization():
     if "temp" not in st.session_state:
         st.session_state.temp = ""
 
-    # Initialize cache in session state
     if "cache" not in st.session_state:
         st.session_state.cache = {}
 
@@ -76,10 +77,7 @@ def show_message():
     """
     Show user question and answers
     """
-
-    # --- Start the session when there is user input ---
     user_input = st.text_input("# **Question:** 👇", "", key="input")
-    # Start a new conversation
     new_conversation = st.button("New Conversation", key="clear", on_click=clear_input)
     if new_conversation:
         st.session_state.session_id = str(datetime.now()).replace(" ", "_")
@@ -97,8 +95,6 @@ def show_message():
             source = output["source"]
             if source.startswith("SELECT"):
                 source = f"_{source}_"
-            # else:
-            #     source = source.replace('\n', '\n\n')
             source_title = "\n\n **Source**:" + "\n\n" + source
             answer = "**Answer**: \n\n" + result
             st.session_state.questions.append(user_input)
@@ -123,13 +119,9 @@ def main():
     """
     Streamlit APP
     """
-    # --- Section 1 ---
     header()
-    # --- Section 2 ---
     initialization()
-    # --- Section 3 ---
     show_message()
-    # --- Foot Section ---
     show_footer()
 
 

@@ -1,101 +1,44 @@
-import re
 import logging
-from typing import List, Union
 
 from sagemaker_pricing import query_engine
 from sagemaker_dg_rag import doc_retrieval
-from prompt_templates import AGENT_TEMPLATE_WITH_HISTORY
 from utils import parse_agent_output
 
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain.agents import Tool
-from langchain.agents import AgentOutputParser, LLMSingleActionAgent
-from langchain.schema import AgentAction, AgentFinish
-from langchain.prompts import StringPromptTemplate
-from langchain.agents import AgentExecutor
-from langchain.chains import LLMChain
+from langgraph.prebuilt import create_react_agent
+from langchain_core.tools import tool
 
 
-class CustomPromptTemplate(StringPromptTemplate):
-    """
-    Customize Prompts using StringPromptTemplate object
-    """
-
-    # The template to use
-    template: str
-    # The list of tools available
-    tools: List[Tool]
-
-    def format(self, **kwargs) -> str:
-        # Get the intermediate steps (AgentAction, Observation tuples)
-        # Format them in a particular way
-        intermediate_steps = kwargs.pop("intermediate_steps")
-        thoughts = ""
-        for action, observation in intermediate_steps:
-            thoughts += action.log
-            thoughts += f"\nObservation: {observation}\nThought: "
-        # Set the agent_scratchpad variable to that value
-        kwargs["agent_scratchpad"] = thoughts
-        # Create a tools variable from the list of tools provided
-        kwargs["tools"] = "\n".join(
-            [f"{tool.name}: {tool.description}" for tool in self.tools]
-        )
-        # Create a list of tool names for the tools provided
-        kwargs["tool_names"] = ", ".join([tool.name for tool in self.tools])
-        return self.template.format(**kwargs)
+@tool
+def sagemaker_developer_guide(query: str) -> str:
+    """Useful for when you need to query the Amazon Kendra index for more information on SageMaker documentation. Input should be a question formatted as a string."""
+    output = doc_retrieval(query)
+    return str(output)
 
 
-class CustomOutputParser(AgentOutputParser):
-    """
-    Parse Agent output
-    """
-
-    def parse(self, llm_output: str) -> Union[AgentAction, AgentFinish]:
-        # Check if agent should finish
-        if "Final Answer:" in llm_output:
-            return AgentFinish(
-                # Return values is generally always a dictionary with a single `output` key
-                # It is not recommended to try anything else at the moment :)
-                return_values={"output": llm_output.split("Final Answer:")[-1].strip()},
-                log=llm_output,
-            )
-        # Parse out the action and action input
-        regex = r"Action\s*\d*\s*:(.*?)\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
-        match = re.search(regex, llm_output, re.DOTALL)
-        if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
-        action = match.group(1).strip()
-        action_input = match.group(2)
-        # Return the action and action input
-        return AgentAction(
-            tool=action,
-            tool_input=action_input.strip(" ").strip('"'),
-            log=llm_output,
-        )
+@tool
+def sagemaker_pricing_data_retrieval(query: str) -> str:
+    """Useful for when you need to have access to pricing table data. Input should be a question."""
+    response = query_engine.query(query)
+    return response.response
 
 
-def doc_tool(reasoning_query):
-    """
-    Tool for RAG
-    """
-    output = doc_retrieval(reasoning_query)
+SYSTEM_PROMPT = """You are an expert in AWS SageMaker services and EC2 pricing.
+You have access to tools for querying SageMaker documentation and pricing data.
 
-    return output
-
-
-def pricing_tool(reasoning_query):
-    """
-    Tool for querying SageMaker pricing data
-    """
-    response = query_engine.query(reasoning_query)
-    output = response.response
-
-    return output
+Guidelines:
+- If asked about pricing data such as instance price, compute optimized, memory, accelerated computing, storage, instance features, instance performance etc., use the sagemaker_pricing_data_retrieval tool.
+- Use EC2 instances with GPUs to train deep learning models.
+- Do not make up any answer.
+- Format the final text answer in Markdown style, ADD '\\' ahead of each $.
+- Include the source file from the sagemaker_developer_guide tool in the final answer.
+- The final answer format should be in JSON format with the keys as "text" and "source".
+- If the final answer comes only from the "sagemaker_pricing_data_retrieval" tool, set "source" as "[Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)"
+"""
 
 
 def agent_call(llm, query):
     """
-    Agent with access to document retrieval tool and PI real-time data retrieval tool, to solve the Use Case 3 milestone questions.
+    Agent with access to document retrieval tool and pricing data retrieval tool.
 
     Inputs:
         llm (object): a LLM object, initialized with Amazon Bedrock client
@@ -103,49 +46,14 @@ def agent_call(llm, query):
     Output:
         output (dict): answer to the input question.
     """
-    rag_tool = Tool(
-        name="sagemaker developer guide",
-        func=doc_tool,
-        description="Useful for when you need to query the Amazon Kendra index for more information on SageMaker documentation. Input should be a question formated as a string.",
-    )
-    data_tool = Tool(
-        name="sagemaker pricing data retrieval",
-        func=pricing_tool,
-        description="Useful for when you need to have access to pricing table data. Input should be a question.",
-    )
-    tools = [rag_tool, data_tool]
+    tools = [sagemaker_developer_guide, sagemaker_pricing_data_retrieval]
 
-    prompt_with_history = CustomPromptTemplate(
-        template=AGENT_TEMPLATE_WITH_HISTORY,
-        tools=tools,
-        # This omits the `agent_scratchpad`, `tools`, and `tool_names` variables because those are generated dynamically
-        # This includes the `intermediate_steps` variable because that is needed
-        input_variables=["input", "intermediate_steps", "history"],
-    )
-    llm_chain = LLMChain(llm=llm, prompt=prompt_with_history)
-    tool_names = [tool.name for tool in tools]
+    agent = create_react_agent(model=llm, tools=tools, prompt=SYSTEM_PROMPT)
+    result = agent.invoke({"messages": [("user", query)]})
 
-    def _handle_error(error) -> str:
-        return str(error)[:50]
-
-    agent = LLMSingleActionAgent(
-        llm_chain=llm_chain,
-        output_parser=CustomOutputParser(),
-        stop=["\nObservation:"],  # Stopping Condition
-        allowed_tools=tool_names,
-        return_source_documents=True,
-        return_intermediate_steps=True,
-        handle_parsing_errors=_handle_error,
-    )
-    memory = ConversationBufferWindowMemory(k=10)
-    agent_executor = AgentExecutor.from_agent_and_tools(
-        agent=agent, tools=tools, verbose=True, memory=memory
-    )
-    result = agent_executor.run(f"\n\nHuman:{query}\n\nAssistant:")
-    logging.debug("Agent output: %s", result)
-    result = parse_agent_output(result)
-    logging.debug("Parsed agent output: %s", result)
-    # Data to be written
-    output = {"source": result["source"], "answer": result["text"]}
-    # output = {"answer": result}
+    output_text = result["messages"][-1].content
+    logging.debug("Agent output: %s", output_text)
+    parsed = parse_agent_output(output_text)
+    logging.debug("Parsed agent output: %s", parsed)
+    output = {"source": parsed["source"], "answer": parsed["text"]}
     return output

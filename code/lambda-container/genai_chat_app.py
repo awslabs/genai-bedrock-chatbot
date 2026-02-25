@@ -13,13 +13,16 @@ def lambda_handler(event, context):
     Lambda handler to answer user's question
     """
     logging.info("events: %s", event)
-    payload = json.loads(event["body"])
-    # payload = json.loads(json.loads(event)['body']) # for local testing
-    logging.debug("Lambda Payload: %s", payload)
+    try:
+        payload = json.loads(event["body"])
+        logging.debug("Lambda Payload: %s", payload)
 
-    query = payload["query"]
-    session_id = payload["session_id"]
+        query = payload["query"]
+        session_id = payload["session_id"]
 
-    output = get_response(query, session_id)
+        output = get_response(query, session_id)
+    except Exception as e:
+        logging.exception("Error processing request")
+        output = {"source": " ", "answer": f"Error processing your request: {e}"}
 
     return output

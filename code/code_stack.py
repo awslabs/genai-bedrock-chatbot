@@ -238,6 +238,8 @@ class CodeStack(Stack):
             ],
             destination_bucket=kendra_bucket,
             retain_on_delete=False,
+            prune=False,
+            memory_limit=512,
         )
 
         s3deploy.BucketDeployment(
@@ -250,6 +252,8 @@ class CodeStack(Stack):
             ],
             destination_bucket=sagemaker_bucket,
             retain_on_delete=False,
+            prune=False,
+            memory_limit=512,
             destination_key_prefix=SAGEMAKER_PRICING_DESTINATION_PREFIX,
         )
         return
@@ -429,7 +433,7 @@ class CodeStack(Stack):
             self,
             "DemoCluster",
             cluster_name=f"{Aws.STACK_NAME}-ecs-cluster",
-            container_insights=True,
+            container_insights_v2=ecs.ContainerInsights.ENABLED,
             vpc=vpc,
         )
 
@@ -458,6 +462,8 @@ class CodeStack(Stack):
             service_name=f"{Aws.STACK_NAME}-chat-service",
             memory_limit_mib=4096,
             public_load_balancer=True,
+            listener_port=8080,
+            min_healthy_percent=100,
             platform_version=ecs.FargatePlatformVersion.LATEST,
             runtime_platform=ecs.RuntimePlatform(
                 operating_system_family=ecs.OperatingSystemFamily.LINUX,
@@ -503,4 +509,12 @@ class CodeStack(Stack):
             scale_in_cooldown=Duration.seconds(60),
             scale_out_cooldown=Duration.seconds(60),
         )
+
+        # Override auto-generated URL output to include port 8080
+        CfnOutput(
+            self,
+            "ApplicationURL",
+            value=f"http://{fargate_service.load_balancer.load_balancer_dns_name}:8080",
+        )
+
         return fargate_service

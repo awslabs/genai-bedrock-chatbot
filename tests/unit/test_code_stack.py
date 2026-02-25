@@ -135,5 +135,5 @@ def test_streamlit_app_created():
     )
     template.has_resource_properties(
         "AWS::ElasticLoadBalancingV2::Listener",
-        Match.object_like({"Port": 80, "Protocol": "HTTP"}),
+        Match.object_like({"Port": 8080, "Protocol": "HTTP"}),
     )
