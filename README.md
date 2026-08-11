@@ -100,13 +100,7 @@ aws lambda invoke --function-name chat-assistant-stack-chat-lambda \
 
 ### Cost
 
-This stack provisions continuously billed resources. The Amazon Kendra
-Developer Edition index dominates the cost at roughly USD 810 per month and has
-no free tier; two NAT gateways, the Fargate task and the Application Load
-Balancer add roughly USD 140 per month. Expect on the order of USD 950 per month
-while the stack is running, plus Bedrock token usage.
-
-Every resource uses `RemovalPolicy.DESTROY`, so tear the stack down when you are
+This stack provisions continuously billed resources. Every resource uses `RemovalPolicy.DESTROY`, so tear the stack down when you are
 finished:
 
 ```bash

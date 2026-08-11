@@ -30,8 +30,7 @@ credentials for that function.
 ### Run Locally
 
 Running locally is also the recommended way to use the UI when the load
-balancer is unavailable — for example when automated security remediation has
-removed the unauthenticated public listener. Only credentials for the deployed
+balancer is unavailable. Only credentials for the deployed
 Lambda are required; no inbound access to the stack is needed.
 
 ```bash
