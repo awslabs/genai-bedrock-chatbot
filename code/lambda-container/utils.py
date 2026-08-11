@@ -1,3 +1,4 @@
+import json
 import re
 from typing import List
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -37,37 +38,153 @@ def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
     return store[session_id]
 
 
+def _content_to_text(content):
+    """
+    Flatten an LLM message's content into plain text.
+
+    Bedrock models that emit extended thinking return a list of content blocks
+    (for example [{"type": "thinking", ...}, {"type": "text", "text": ...}])
+    instead of a plain string, so text blocks are concatenated and non-text
+    blocks are discarded.
+
+    Input:
+        content: message content as a str, a list of blocks, or None
+    Output:
+        content as a str
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and block.get("type") == "text":
+                parts.append(block.get("text", ""))
+        return "\n".join(part for part in parts if part)
+    if content is None:
+        return ""
+    return str(content)
+
+
+def _repair_json_escapes(candidate):
+    """
+    Escape backslashes that do not start a valid JSON escape sequence.
+
+    The agent prompt asks for a '\\' in front of every '$', which produces
+    invalid JSON such as '\\$3.825'. Doubling those backslashes makes the
+    payload parseable while preserving the intended Markdown escaping.
+
+    Input:
+        candidate (str): candidate JSON text
+    Output:
+        repaired JSON text as a str
+    """
+    return re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", candidate)
+
+
+def _extract_json_object(text):
+    """
+    Best-effort extraction of a JSON object from a model response.
+
+    Handles both a bare JSON object and one wrapped in a fenced code block, and
+    retries with repaired escape sequences before giving up.
+
+    Input:
+        text (str): model response
+    Output:
+        dict if a JSON object was parsed, otherwise None
+    """
+    candidate = text.strip()
+
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", candidate, re.DOTALL)
+    if fenced:
+        candidate = fenced.group(1)
+    else:
+        start = candidate.find("{")
+        end = candidate.rfind("}")
+        if start == -1 or end <= start:
+            return None
+        candidate = candidate[start : end + 1]
+
+    for attempt in (candidate, _repair_json_escapes(candidate)):
+        try:
+            parsed = json.loads(attempt)
+        except (ValueError, TypeError):
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+
+    return None
+
+
+def _first_match(patterns, text):
+    """
+    Return the first capture group matched by any of the given patterns.
+
+    Input:
+        patterns (tuple): regex patterns to try in order
+        text (str): text to search
+    Output:
+        captured value as a str, or "" when nothing matched
+    """
+    for pattern in patterns:
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            # Handle escaped single quotes
+            return match.group(1).replace("\\'", "'")
+    return ""
+
+
 def parse_agent_output(output):
     """
     This is to parse the output the agent into a JSON format
 
+    The agent is prompted to answer with JSON containing "text" and "source",
+    but compliance is not guaranteed: the response may arrive as a list of
+    content blocks, as JSON inside a fenced code block, or as plain Markdown.
+    Each case degrades gracefully so a usable answer is always returned rather
+    than an empty one.
+
     Input:
-        output (str): agent call output
+        output: agent call output (str, or list of content blocks)
     Output"
         output (dic): reformatted output
     """
+    text_str = _content_to_text(output)
 
-    # Define regex patterns to match 'text' and 'source' sections
-    text_pattern = r"['\"]text['\"]\s*:\s*['\"]([^']*)['\"]"
-    source_pattern = r"['\"]source['\"]\s*:\s*['\"]([^']*)['\"]"
+    if not text_str.strip():
+        return {"text": "", "source": ""}
 
-    # Use regex to search for and extract the 'text' and 'source' sections
-    text_match = re.search(text_pattern, output)
-    source_match = re.search(source_pattern, output)
-
-    if text_match:
-        text = text_match.group(1).replace("\\'", "'")  # Handle escaped single quotes
+    payload = _extract_json_object(text_str)
+    if payload is not None:
+        text = payload.get("text") or ""
+        source = payload.get("source") or ""
     else:
-        text = ""
+        # Fall back to regex for near-JSON output, matching double-quoted
+        # (JSON style) and single-quoted (Python repr style) values. Each
+        # pattern stops at its own closing quote so a value cannot swallow the
+        # following key.
+        text_patterns = (
+            r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r"'text'\s*:\s*'((?:[^'\\]|\\.)*)'",
+        )
+        source_patterns = (
+            r'"source"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r"'source'\s*:\s*'((?:[^'\\]|\\.)*)'",
+        )
 
-    if source_match:
-        source = source_match.group(1).replace(
-            "\\'", "'"
-        )  # Handle escaped single quotes
+        text = _first_match(text_patterns, text_str)
+        source = _first_match(source_patterns, text_str)
+
+        if not text:
+            # The model answered in prose instead of JSON. Surface the answer
+            # as-is rather than returning an empty response.
+            text = text_str.strip()
+
+    if source:
         source_title, source_link = reformat_source(source)
         source = f"[{source_title}]({source_link})"
-    else:
-        source = ""
 
     output = {"text": text, "source": source}
     return output

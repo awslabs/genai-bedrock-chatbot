@@ -15,8 +15,11 @@ def get_response(user_input, session_id):
         model_name="ClaudeHaiku", max_tokens=32, cache=False
     )
 
+    # Claude Sonnet 5 can spend part of its output budget on thinking tokens
+    # before the final answer, so the agent needs enough headroom to finish its
+    # JSON response instead of being cut off mid-answer.
     llm_agent = Connections.get_bedrock_llm(
-        model_name="ClaudeSonnet", max_tokens=1024, cache=False
+        model_name="ClaudeSonnet", max_tokens=4096, cache=False
     )
     qintent = get_question_intent_general(llm=llm_qintent, query=user_input)
     logging.debug("Question %s", user_input)

@@ -6,10 +6,11 @@ from llama_index.core.objects import (
     ObjectIndex,
     SQLTableSchema,
 )
-from llama_index.llms.bedrock import Bedrock
+from llama_index.llms.bedrock_converse import BedrockConverse
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.indices.struct_store import SQLTableRetrieverQueryEngine
-from llama_index.embeddings.bedrock import BedrockEmbedding
+from llama_index.embeddings.langchain import LangchainEmbedding
+from langchain_aws import BedrockEmbeddings
 from sqlalchemy import create_engine
 from prompt_templates import SQL_TEMPLATE_STR, RESPONSE_TEMPLATE_STR
 from connections import Connections
@@ -46,14 +47,25 @@ def create_query_engine(SQL_PROMPT=SQL_PROMPT, RESPONSE_PROMPT=RESPONSE_PROMPT):
     engine = create_sql_engine()
     sql_database = SQLDatabase(engine, sample_rows_in_table_info=2)
 
-    # Use Claude Sonnet 4.6 via llama-index Bedrock integration
-    llm = Bedrock(
-        model="global.anthropic.claude-sonnet-4-6",
-        context_size=200000,
-    )
-    embeddings = BedrockEmbedding(
+    # Use the same Bedrock model mapping as the rest of the app, via the
+    # Converse API (supports current Claude models and global inference profiles).
+    pricing_model_id = Connections.MODELID_MAPPING["ClaudeSonnet"]
+    llm_kwargs = {}
+    if Connections.supports_sampling_params(pricing_model_id):
+        llm_kwargs["temperature"] = 0
+    llm = BedrockConverse(
+        model=pricing_model_id,
         client=Connections.bedrock_client,
-        model_id="amazon.titan-embed-text-v2:0",
+        **llm_kwargs,
+    )
+    # Wrapped through LangChain's Bedrock embeddings so any Bedrock embedding
+    # model ID can be used (the llama-index Bedrock embedding integration only
+    # accepts a fixed allowlist of model IDs).
+    embeddings = LangchainEmbedding(
+        BedrockEmbeddings(
+            client=Connections.bedrock_client,
+            model_id="cohere.embed-v4:0",
+        )
     )
 
     Settings.llm = llm

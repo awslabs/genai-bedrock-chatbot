@@ -16,24 +16,39 @@ class Connections:
 
     MODELID_MAPPING = {
         "ClaudeHaiku": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-        "ClaudeSonnet": "global.anthropic.claude-sonnet-4-6",
-        "ClaudeOpus": "global.anthropic.claude-opus-4-6-v1",
+        "ClaudeSonnet": "global.anthropic.claude-sonnet-5",
+        "ClaudeOpus": "global.anthropic.claude-opus-4-8",
     }
+
+    # Claude Sonnet 5 and Claude Opus 4.8 deprecated the sampling parameters
+    # (temperature, top_p, top_k). Passing any of them raises a
+    # ValidationException on both InvokeModel and Converse. Earlier models such
+    # as Claude Haiku 4.5 still accept temperature, but reject temperature and
+    # top_p together, so top_p/top_k are no longer sent at all.
+    MODELS_WITHOUT_SAMPLING_PARAMS = frozenset(
+        {
+            "global.anthropic.claude-sonnet-5",
+            "global.anthropic.claude-opus-4-8",
+        }
+    )
+
+    @staticmethod
+    def supports_sampling_params(model_id):
+        """Whether the given Bedrock model accepts temperature/top_p/top_k."""
+        return model_id not in Connections.MODELS_WITHOUT_SAMPLING_PARAMS
 
     @staticmethod
     def get_bedrock_llm(model_name="ClaudeSonnet", max_tokens=256, cache=False):
         model_id = Connections.MODELID_MAPPING.get(
             model_name, Connections.MODELID_MAPPING["ClaudeSonnet"]
         )
+        model_kwargs = {"max_tokens": max_tokens}
+        if Connections.supports_sampling_params(model_id):
+            model_kwargs["temperature"] = 0
         llm = ChatBedrock(
             client=Connections.bedrock_client,
             model_id=model_id,
-            model_kwargs={
-                "max_tokens": max_tokens,
-                "temperature": 0,
-                "top_p": 1,
-                "top_k": 50,
-            },
+            model_kwargs=model_kwargs,
             cache=cache,
         )
         return llm
