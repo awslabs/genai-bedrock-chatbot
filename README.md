@@ -20,6 +20,30 @@ Claude Opus 4.8 (`global.anthropic.claude-opus-4-8`) is also wired up in
 `model_name="ClaudeOpus"` to `Connections.get_bedrock_llm()` to opt in for a
 given call path. Opus is substantially more expensive per token than Sonnet.
 
+#### Sampling parameters
+
+Claude Sonnet 5 and Claude Opus 4.8 have deprecated the sampling parameters
+`temperature`, `top_p` and `top_k`. Sending any of them returns a
+`ValidationException` on both `InvokeModel` and `Converse`. Claude Haiku 4.5
+still accepts `temperature`, but rejects `temperature` and `top_p` together.
+
+`Connections.get_bedrock_llm()` therefore sends `temperature` only for models
+listed as supporting it, and never sends `top_p` or `top_k`. If you add a model
+to `MODELID_MAPPING`, also update `Connections.MODELS_WITHOUT_SAMPLING_PARAMS`
+so the correct parameters are sent.
+
+#### Embeddings
+
+Embeddings are generated with LangChain's `BedrockEmbeddings` wrapped in
+LlamaIndex's `LangchainEmbedding` adapter. The `llama-index-embeddings-bedrock`
+integration is deliberately not used: it accepts only a fixed allowlist of
+model IDs and requires `aioboto3`, which pins `boto3` to an older release. The
+wrapper accepts any Bedrock embedding model ID.
+
+Changing the embedding model requires no reindexing. The table-retrieval index
+used for pricing queries is built in memory on each Lambda cold start, and
+document retrieval is handled by Amazon Kendra, which does not use this model.
+
 ### Deployment
 
 Please refer to this APG article for detailed deployment steps:
@@ -33,11 +57,65 @@ For a chat-assistant solution using Agents for Amazon Bedrock, please refer:
 ### Prerequisites
 
 - Docker
-- AWS CDK Toolkit 2.240.0+, installed and configured. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
+- AWS CDK Toolkit (CLI), installed and configured. Verified with CLI 2.1135.1 against `aws-cdk-lib` 2.264.0. For more information, see [Getting started with the AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) in the AWS CDK documentation.
 - Python 3.13+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
 - An [active AWS account](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
 - An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1.
 - Enable Claude Haiku 4.5, Claude Sonnet 5, and Cohere Embed v4 model access in the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/).
+
+### Post-deployment steps
+
+`cdk deploy` creates the Kendra index and the Glue crawler but does not populate
+them. Until both of the following complete, document questions return no
+sources and pricing questions fail, because the Athena tables do not yet exist.
+
+1. Sync the Kendra data source (indexes the SageMaker Developer Guide, ~1,400
+   documents):
+
+   ```bash
+   INDEX_ID=$(aws kendra list-indices \
+     --query 'IndexConfigurationSummaryItems[?contains(Name,`chat-assistant`)].Id | [0]' --output text)
+   DS_ID=$(aws kendra list-data-sources --index-id "$INDEX_ID" \
+     --query 'SummaryItems[0].Id' --output text)
+   aws kendra start-data-source-sync-job --index-id "$INDEX_ID" --id "$DS_ID"
+   ```
+
+2. Run the Glue crawler (creates the four pricing tables):
+
+   ```bash
+   aws glue start-crawler --name chat-assistant-stack-sagemaker-pricing-crawler
+   ```
+
+Verify with `aws kendra describe-index --id "$INDEX_ID" --query
+'IndexStatistics'` and `aws glue get-tables --database-name
+chat-assistant-stack-pricing-db --query 'TableList[].Name'`.
+
+You can then exercise the backend without the UI:
+
+```bash
+aws lambda invoke --function-name chat-assistant-stack-chat-lambda \
+  --payload '{"body":"{\"query\": \"What is SageMaker Model Monitor?\", \"session_id\": \"1\"}"}' \
+  --cli-binary-format raw-in-base64-out /dev/stdout
+```
+
+### Cost
+
+This stack provisions continuously billed resources. The Amazon Kendra
+Developer Edition index dominates the cost at roughly USD 810 per month and has
+no free tier; two NAT gateways, the Fargate task and the Application Load
+Balancer add roughly USD 140 per month. Expect on the order of USD 950 per month
+while the stack is running, plus Bedrock token usage.
+
+Every resource uses `RemovalPolicy.DESTROY`, so tear the stack down when you are
+finished:
+
+```bash
+cdk destroy
+```
+
+The two S3 buckets are versioned and are not configured with
+`auto_delete_objects`. If `cdk destroy` reports `DELETE_FAILED` on a bucket,
+empty all object versions and delete markers, then re-run `cdk destroy`.
 
 ### Target technology stack
 
@@ -73,13 +151,31 @@ The code repository contains the following files and folders:
 | Component | Package | Version |
 |-----------|---------|---------|
 | Infrastructure | `aws-cdk-lib` | 2.264.0 |
+| CDK rule pack | `cdk-nag` | >=2.38.2,<3.0.0 |
 | LLM Integration | `langchain-aws` | 1.7.0 |
 | LLM Framework | `langchain` | 1.3.15 |
 | Agent Orchestration | `langgraph` | 1.2.11 |
 | SQL Query Engine | `llama-index-core` | 0.14.23 |
+| Bedrock LLM (LlamaIndex) | `llama-index-llms-bedrock-converse` | 0.14.18 |
+| Embedding adapter | `llama-index-embeddings-langchain` | 0.5.0 |
 | Frontend | `streamlit` | 1.61.1 |
 
+`cdk-nag` is capped below 3.0.0 on purpose. Version 3.x removed
+`NagSuppressions`, which both `app.py` and `code/code_stack.py` import.
+
 **Note:** The AWS CDK code uses [L3 constructs](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) and [AWS managed IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html#aws-managed-policies) for deploying the solution.
+
+## Running the tests
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest -q -p no:debugging
+```
+
+`-p no:debugging` is required. The repository's `code/` package shadows the
+Python standard library `code` module, which prevents pytest's debugging plugin
+from importing `pdb` and aborts collection with an `INTERNALERROR`.
 
 ## Useful commands
 
@@ -90,6 +186,18 @@ The code repository contains the following files and folders:
 - `cdk docs` open CDK documentation
 
 ## Security
+
+The Streamlit UI is served by an **internet-facing Application Load Balancer over
+plain HTTP on port 8080 with no authentication**. Anyone who can reach the ALB
+DNS name can use the assistant and incur Bedrock charges on your account. This
+is acceptable only for a short-lived demo in an isolated account.
+
+Before using this beyond a demo, put authentication in front of the UI and
+terminate TLS on the load balancer. Note that organisations commonly run
+automated remediation that deletes unauthenticated public listeners, in which
+case the UI becomes unreachable while the stack still reports a healthy
+deployment; run the Streamlit app locally against the deployed Lambda in that
+situation (see `code/streamlit-app/README.md`).
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
