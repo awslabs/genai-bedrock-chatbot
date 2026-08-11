@@ -11,9 +11,14 @@ The application uses the following Amazon Bedrock models via [global cross-regio
 | Use Case | Model | Inference Profile ID |
 |----------|-------|---------------------|
 | Intent Classification | Claude Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
-| RAG & Agent | Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` |
-| SQL/Pricing Queries | Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` |
-| Embeddings | Amazon Titan Text Embeddings V2 | `amazon.titan-embed-text-v2:0` |
+| RAG & Agent | Claude Sonnet 5 | `global.anthropic.claude-sonnet-5` |
+| SQL/Pricing Queries | Claude Sonnet 5 | `global.anthropic.claude-sonnet-5` |
+| Embeddings | Cohere Embed v4 | `cohere.embed-v4:0` |
+
+Claude Opus 4.8 (`global.anthropic.claude-opus-4-8`) is also wired up in
+`Connections.MODELID_MAPPING` as `ClaudeOpus`. It is not used by default — pass
+`model_name="ClaudeOpus"` to `Connections.get_bedrock_llm()` to opt in for a
+given call path. Opus is substantially more expensive per token than Sonnet.
 
 ### Deployment
 
@@ -32,11 +37,11 @@ For a chat-assistant solution using Agents for Amazon Bedrock, please refer:
 - Python 3.13+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
 - An [active AWS account](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-creating.html)
 - An [AWS account bootstrapped](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) by using AWS CDK in us-east-1.
-- Enable Claude Haiku 4.5, Claude Sonnet 4.6, and Amazon Titan Text Embeddings V2 model access in the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/).
+- Enable Claude Haiku 4.5, Claude Sonnet 5, and Cohere Embed v4 model access in the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/).
 
 ### Target technology stack
 
-- Amazon Bedrock (Claude Haiku 4.5, Claude Sonnet 4.6, Titan Embeddings V2)
+- Amazon Bedrock (Claude Haiku 4.5, Claude Sonnet 5, Cohere Embed v4)
 - Amazon ECS
 - AWS Glue
 - AWS Lambda
@@ -67,12 +72,12 @@ The code repository contains the following files and folders:
 
 | Component | Package | Version |
 |-----------|---------|---------|
-| Infrastructure | `aws-cdk-lib` | 2.240.0 |
-| LLM Integration | `langchain-aws` | 1.3.0 |
-| LLM Framework | `langchain` | 1.2.10 |
-| Agent Orchestration | `langgraph` | 1.0.9 |
-| SQL Query Engine | `llama-index-core` | 0.13.0 |
-| Frontend | `streamlit` | 1.54.0 |
+| Infrastructure | `aws-cdk-lib` | 2.264.0 |
+| LLM Integration | `langchain-aws` | 1.7.0 |
+| LLM Framework | `langchain` | 1.3.15 |
+| Agent Orchestration | `langgraph` | 1.2.11 |
+| SQL Query Engine | `llama-index-core` | 0.14.23 |
+| Frontend | `streamlit` | 1.61.1 |
 
 **Note:** The AWS CDK code uses [L3 constructs](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) and [AWS managed IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html#aws-managed-policies) for deploying the solution.
 
